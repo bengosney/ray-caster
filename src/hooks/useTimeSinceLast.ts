@@ -1,6 +1,8 @@
 import { useRef } from "react";
 
-export const useTimeSinceLast = (inital: number = 0) => {
+type SinceFunc = () => number;
+
+export const useTimeSinceLast = (inital: number = 0): SinceFunc => {
     const timeRef = useRef(inital);
     return () => {
         const ts = (new Date()).getTime();

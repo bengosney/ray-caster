@@ -1,9 +1,6 @@
 import React, { HTMLProps, useEffect, useRef, useState } from 'react';
 import useTimeSinceLast from '../hooks/useTimeSinceLast';
 
-import './App.css';
-
-
 interface CanvasProps extends React.ComponentPropsWithoutRef<"canvas"> {
     frame: (context: CanvasRenderingContext2D, since: number) => void;
     clear?: string | true;
@@ -17,8 +14,7 @@ const Canvas = ({ frame, clear = undefined, ...props }: CanvasProps) => {
 
     useEffect(() => {
         if (canvasRef && canvasRef.current) {
-            const ctx = canvasRef.current.getContext("2d");
-            setContext(ctx);
+            setContext(canvasRef.current.getContext("2d"));
         }
     }, [canvasRef]);
 

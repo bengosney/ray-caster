@@ -7,10 +7,7 @@ function App() {
     <div>
       <h1>Canvas?</h1>
       <div>
-        <Canvas height={480} width={640} frame={(context, since) => {
-          context.fillStyle = '#000000';
-          context.fillRect(0, 0, context.canvas.width, context.canvas.height);
-
+        <Canvas clear={true} height={480} width={640} frame={(context, since) => {
           const w_size = context.canvas.width / 4;
           const h_size = context.canvas.height / 4;
           context.fillStyle = '#aaffaa';
