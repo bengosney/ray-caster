@@ -1,17 +1,8 @@
 import React, { HTMLProps, useEffect, useRef, useState } from 'react';
+import useTimeSinceLast from '../hooks/useTimeSinceLast';
+
 import './App.css';
 
-
-const useTimeSinceLast = (inital: number = 0) => {
-    const timeRef = useRef(inital);
-    return () => {
-        const ts = (new Date()).getTime();
-        const passed = ts - timeRef.current;
-        timeRef.current = ts;
-
-        return passed;
-    };
-}
 
 interface CanvasProps extends React.ComponentPropsWithoutRef<"canvas"> {
     frame: (context: CanvasRenderingContext2D, since: number) => void;

@@ -1,4 +1,4 @@
-import Canvas from "./Canvas";
+import Canvas from "./widgets/Canvas";
 import './App.css';
 
 function App() {
