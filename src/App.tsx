@@ -90,6 +90,8 @@ function App() {
     pos: vec2(5, 5),
     angle: 220,
   });
+  const fpsCounter = useRef<number>(0);
+  const [fps, setfps] = useState<number>(0);
 
   useEffect(() => {
     document.addEventListener("keydown", (event) => {
@@ -109,11 +111,19 @@ function App() {
           break;
       }
     });
+
+    const interval = setInterval(() => {
+      setfps(fpsCounter.current);
+      fpsCounter.current = 0;
+    }, 1000);
+
+    return () => clearInterval(interval);
   }, []);
 
   return (
     <div>
       <h1>Canvas?</h1>
+      <div>FPS: {fps}</div>
       <div>
         <Canvas
           clear={true}
@@ -144,6 +154,7 @@ function App() {
 
               drawLine(vec2(i, halfHeight - wallHeight), vec2(i, halfHeight + wallHeight), "red", context);
             }
+            fpsCounter.current = fpsCounter.current + 1;
           }}
         />
       </div>
