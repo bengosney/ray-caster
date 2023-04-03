@@ -38,7 +38,7 @@ const keys: KeyMap = {
   right: "KeyD",
 };
 
-const actions = Object.fromEntries(Object.entries(keys).map(a => a.reverse()))
+const actions = Object.fromEntries(Object.entries(keys).map((a) => a.reverse()));
 
 const movement = 0.1;
 const rotation = 2.5;
@@ -72,11 +72,10 @@ const move = (angle: number, amount: number): Vec2 => ({
   y: Math.sin(degreeToRadians(angle)) * amount,
 });
 
-
 const vec2Apply = (vec: Vec2, func: (x: number) => number): Vec2 => ({
   x: func(vec.x),
   y: func(vec.y),
-})
+});
 
 const addVec2 = (a: Vec2, b: Vec2): Vec2 => ({
   x: a.x + b.x,
@@ -132,7 +131,6 @@ function App() {
           height={480}
           width={640}
           frame={(context, since) => {
-
             player.current.keys.forEach((action) => {
               switch (action) {
                 case "up":
