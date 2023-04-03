@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 const level = [
   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-  [1, 0, 0, 1, 0, 1, 0, 0, 0, 1],
+  [1, 0, 0, 1, 1, 1, 0, 0, 0, 1],
   [1, 0, 0, 1, 1, 1, 0, 0, 0, 1],
   [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
   [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
@@ -33,13 +33,6 @@ interface Vec2 {
 }
 const vec2 = (x: number, y: number): Vec2 => ({ x, y });
 
-interface Vec3 {
-  x: number;
-  y: number;
-  z: number;
-}
-const vec3 = (x: number, y: number, z: number): Vec3 => ({ x, y, z });
-
 const degreeToRadians = (degree: number): number => {
   let pi = Math.PI;
   return (degree * pi) / 180;
@@ -65,10 +58,11 @@ const move = (angle: number, amount: number): Vec2 => ({
   y: Math.sin(degreeToRadians(angle)) * amount,
 });
 
-const floorVec2 = (vec: Vec2): Vec2 => ({
-  x: Math.floor(vec.x),
-  y: Math.floor(vec.y),
-});
+
+const vec2Apply = (vec: Vec2, func: (x:number) => number ):Vec2 => ({
+  x: func(vec.x),
+  y: func(vec.y),
+})
 
 const addVec2 = (a: Vec2, b: Vec2): Vec2 => ({
   x: a.x + b.x,
@@ -81,7 +75,7 @@ const subVec2 = (a: Vec2, b: Vec2): Vec2 => ({
 });
 
 const checkMove = (move: Vec2) => {
-  const { x, y } = floorVec2(move);
+  const { x, y } = vec2Apply(move, Math.floor);
   return level[x][y] == 0;
 };
 
@@ -133,10 +127,11 @@ function App() {
             const angleInc = fov / context.canvas.width;
             const initalAngle = player.current.angle - fov / 2;
             const halfHeight = context.canvas.height / 2;
+            const {pos, angle} = player.current;
 
             for (let i = 0; i < context.canvas.width; i++) {
               const rayAngle = initalAngle + angleInc * i;
-              const ray = vec2(player.current.pos.x, player.current.pos.y);
+              const ray = vec2(pos.x, pos.y);
               const rayCos = Math.cos(degreeToRadians(rayAngle)) / precision;
               const raySin = Math.sin(degreeToRadians(rayAngle)) / precision;
 
@@ -144,10 +139,9 @@ function App() {
                 ray.x += rayCos;
                 ray.y += raySin;
               }
-              const distance = Math.sqrt(
-                Math.pow(player.current.pos.x - ray.x, 2) + Math.pow(player.current.pos.y - ray.y, 2),
-              );
-              const wallHeight = Math.floor(context.canvas.height / distance);
+              const distance = Math.sqrt(Math.pow(pos.x - ray.x, 2) + Math.pow(pos.y - ray.y, 2));
+              const correctDistance = distance * Math.cos(degreeToRadians(rayAngle - angle));
+              const wallHeight = Math.floor(context.canvas.height / correctDistance);
 
               drawLine(vec2(i, 0), vec2(i, halfHeight - wallHeight), "cyan", context);
               drawLine(vec2(i, halfHeight + wallHeight), vec2(i, context.canvas.height), "green", context);
