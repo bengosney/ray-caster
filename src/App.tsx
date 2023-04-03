@@ -40,8 +40,8 @@ const keys: KeyMap = {
 
 const actions = Object.fromEntries(Object.entries(keys).map((a) => a.reverse()));
 
-const movement = 0.1;
-const rotation = 2.5;
+const movement = 0.005;
+const rotation = 0.15;
 
 interface Vec2 {
   x: number;
@@ -131,19 +131,21 @@ function App() {
           height={480}
           width={640}
           frame={(context, since) => {
+            const { pos, angle } = player.current;
+
             player.current.keys.forEach((action) => {
               switch (action) {
                 case "up":
-                  player.current.pos = addVec2(player.current.pos, move(player.current.angle, movement));
+                  player.current.pos = addVec2(pos, move(angle, movement * since));
                   break;
                 case "down":
-                  player.current.pos = subVec2(player.current.pos, move(player.current.angle, movement));
+                  player.current.pos = subVec2(pos, move(angle, movement * since));
                   break;
                 case "left":
-                  player.current.angle -= rotation;
+                  player.current.angle -= rotation * since;
                   break;
                 case "right":
-                  player.current.angle += rotation;
+                  player.current.angle += rotation * since;
                   break;
               }
             });
@@ -151,7 +153,6 @@ function App() {
             const angleInc = fov / context.canvas.width;
             const initalAngle = player.current.angle - fov / 2;
             const halfHeight = context.canvas.height / 2;
-            const { pos, angle } = player.current;
 
             for (let i = 0; i < context.canvas.width; i++) {
               const rayAngle = initalAngle + angleInc * i;
