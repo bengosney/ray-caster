@@ -1,6 +1,6 @@
 import Canvas from "./widgets/Canvas";
 import "./App.css";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const level = [
   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
@@ -16,6 +16,16 @@ const level = [
 ];
 
 const precision = 64;
+
+const keys = {
+  up: "KeyW",
+  down: "KeyS",
+  left: "KeyA",
+  right: "KeyD",
+};
+
+const movement = 0.25;
+const rotation = 2.5;
 
 interface Vec2 {
   x: number;
@@ -60,6 +70,32 @@ function App() {
     pos: vec2(5, 5),
     angle: 220,
   });
+
+  useEffect(() => {
+    document.addEventListener("keydown", (event) => {
+      const { code } = event;
+      switch (code) {
+        case keys.up:
+          const playerCosF = Math.cos(degreeToRadians(player.current.angle)) * movement;
+          const playerSinF = Math.sin(degreeToRadians(player.current.angle)) * movement;
+          player.current.pos.x += playerCosF;
+          player.current.pos.y += playerSinF;
+          break;
+        case keys.down:
+          const playerCosB = Math.cos(degreeToRadians(player.current.angle)) * movement;
+          const playerSinB = Math.sin(degreeToRadians(player.current.angle)) * movement;
+          player.current.pos.x -= playerCosB;
+          player.current.pos.y -= playerSinB;
+          break;
+        case keys.left:
+          player.current.angle -= rotation;
+          break;
+        case keys.right:
+          player.current.angle += rotation;
+          break;
+      }
+    });
+  }, []);
 
   return (
     <div>
