@@ -4,16 +4,20 @@ import { useEffect, useRef, useState } from "react";
 import { rgb, lightenDarkenRGB, RGBToHex } from "./utils/colour";
 
 const level = [
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-  [1, 0, 0, 1, 1, 1, 0, 0, 0, 1],
-  [1, 0, 0, 1, 1, 1, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+  [1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
 ];
 
 const precision = 64;
@@ -25,7 +29,7 @@ const keys = {
   right: "KeyD",
 };
 
-const movement = 0.25;
+const movement = 0.1;
 const rotation = 2.5;
 
 interface Vec2 {
@@ -60,7 +64,7 @@ const move = (angle: number, amount: number): Vec2 => ({
 });
 
 
-const vec2Apply = (vec: Vec2, func: (x:number) => number ):Vec2 => ({
+const vec2Apply = (vec: Vec2, func: (x: number) => number): Vec2 => ({
   x: func(vec.x),
   y: func(vec.y),
 })
@@ -128,7 +132,7 @@ function App() {
             const angleInc = fov / context.canvas.width;
             const initalAngle = player.current.angle - fov / 2;
             const halfHeight = context.canvas.height / 2;
-            const {pos, angle} = player.current;
+            const { pos, angle } = player.current;
 
             for (let i = 0; i < context.canvas.width; i++) {
               const rayAngle = initalAngle + angleInc * i;
@@ -146,7 +150,7 @@ function App() {
 
               drawLine(vec2(i, 0), vec2(i, halfHeight - wallHeight), "#00FFFF", context);
               drawLine(vec2(i, halfHeight + wallHeight), vec2(i, context.canvas.height), "#023020", context);
-              const colour = RGBToHex(lightenDarkenRGB(rgb(255,0,0), -(distance * 10)));
+              const colour = RGBToHex(lightenDarkenRGB(rgb(255, 0, 0), -(distance * 10)));
               drawLine(vec2(i, halfHeight - wallHeight), vec2(i, halfHeight + wallHeight), colour, context);
             }
             fpsCounter.current = fpsCounter.current + 1;
