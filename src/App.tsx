@@ -22,12 +22,23 @@ const level = [
 
 const precision = 64;
 
-const keys = {
+interface KeyMap {
+  up: string;
+  down: string;
+  left: string;
+  right: string;
+}
+
+type Actions = keyof KeyMap;
+
+const keys: KeyMap = {
   up: "KeyW",
   down: "KeyS",
   left: "KeyA",
   right: "KeyD",
 };
+
+const actions = Object.fromEntries(Object.entries(keys).map(a => a.reverse()))
 
 const movement = 0.1;
 const rotation = 2.5;
@@ -38,10 +49,7 @@ interface Vec2 {
 }
 const vec2 = (x: number, y: number): Vec2 => ({ x, y });
 
-const degreeToRadians = (degree: number): number => {
-  let pi = Math.PI;
-  return (degree * pi) / 180;
-};
+const degreeToRadians = (degree: number): number => (degree * Math.PI) / 180;
 
 const drawLine = (p1: Vec2, p2: Vec2, colour: string, context: CanvasRenderingContext2D) => {
   context.strokeStyle = colour;
@@ -56,6 +64,7 @@ const fov = 60;
 interface Player {
   pos: Vec2;
   angle: number;
+  keys: Set<Actions>;
 }
 
 const move = (angle: number, amount: number): Vec2 => ({
@@ -88,6 +97,7 @@ function App() {
   const player = useRef<Player>({
     pos: vec2(5, 5),
     angle: 220,
+    keys: new Set<Actions>(),
   });
   const fpsCounter = useRef<number>(0);
   const [fps, setfps] = useState<number>(0);
@@ -95,20 +105,13 @@ function App() {
   useEffect(() => {
     document.addEventListener("keydown", (event) => {
       const { code } = event;
-      switch (code) {
-        case keys.up:
-          player.current.pos = addVec2(player.current.pos, move(player.current.angle, movement));
-          break;
-        case keys.down:
-          player.current.pos = subVec2(player.current.pos, move(player.current.angle, movement));
-          break;
-        case keys.left:
-          player.current.angle -= rotation;
-          break;
-        case keys.right:
-          player.current.angle += rotation;
-          break;
+      if (code in actions) {
+        player.current.keys.add(actions[code]);
       }
+    });
+    document.addEventListener("keyup", (event) => {
+      const { code } = event;
+      player.current.keys.delete(actions[code]);
     });
 
     const interval = setInterval(() => {
@@ -129,6 +132,24 @@ function App() {
           height={480}
           width={640}
           frame={(context, since) => {
+
+            player.current.keys.forEach((action) => {
+              switch (action) {
+                case "up":
+                  player.current.pos = addVec2(player.current.pos, move(player.current.angle, movement));
+                  break;
+                case "down":
+                  player.current.pos = subVec2(player.current.pos, move(player.current.angle, movement));
+                  break;
+                case "left":
+                  player.current.angle -= rotation;
+                  break;
+                case "right":
+                  player.current.angle += rotation;
+                  break;
+              }
+            });
+
             const angleInc = fov / context.canvas.width;
             const initalAngle = player.current.angle - fov / 2;
             const halfHeight = context.canvas.height / 2;
