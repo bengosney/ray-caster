@@ -1,49 +1,49 @@
-import React, { HTMLProps, useEffect, useRef, useState } from 'react';
-import useTimeSinceLast from '../hooks/useTimeSinceLast';
+import React, { HTMLProps, useEffect, useRef, useState } from "react";
+import useTimeSinceLast from "../hooks/useTimeSinceLast";
 
 interface CanvasProps extends React.ComponentPropsWithoutRef<"canvas"> {
-    frame: (context: CanvasRenderingContext2D, since: number) => void;
-    clear?: string | true;
-    animating?: boolean;
+  frame: (context: CanvasRenderingContext2D, since: number) => void;
+  clear?: string | true;
+  animating?: boolean;
 }
 
 const Canvas = ({ frame, clear = undefined, animating = true, ...props }: CanvasProps) => {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const requestRef = useRef<number>(0);
-    const since = useTimeSinceLast();
-    const [context, setContext] = useState<CanvasRenderingContext2D | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const requestRef = useRef<number>(0);
+  const since = useTimeSinceLast();
+  const [context, setContext] = useState<CanvasRenderingContext2D | null>(null);
 
-    useEffect(() => {
-        if (canvasRef && canvasRef.current) {
-            setContext(canvasRef.current.getContext("2d"));
+  useEffect(() => {
+    if (canvasRef && canvasRef.current) {
+      setContext(canvasRef.current.getContext("2d"));
+    }
+  }, [canvasRef]);
+
+  useEffect(() => {
+    if (context) {
+      const draw = () => {
+        if (clear) {
+          const { width, height } = context.canvas;
+          if (clear === true) {
+            context.clearRect(0, 0, width, height);
+          } else {
+            context.fillStyle = clear;
+            context.fillRect(0, 0, width, height);
+          }
         }
-    }, [canvasRef]);
 
-    useEffect(() => {
-        if (context) {
-            const draw = () => {
-                if (clear) {
-                    const {width, height} = context.canvas;
-                    if (clear === true) {
-                        context.clearRect(0, 0, width, height);
-                    } else {
-                        context.fillStyle = clear;
-                	    context.fillRect(0, 0, width, height);
-                    }
-                }
-
-                frame(context, since());
-                if (animating) {
-                    requestRef.current = requestAnimationFrame(() => draw());
-                }
-            }
-
-            requestRef.current = requestAnimationFrame(() => draw());
-            return () => cancelAnimationFrame(requestRef.current);
+        frame(context, since());
+        if (animating) {
+          requestRef.current = requestAnimationFrame(() => draw());
         }
-    }, [context])
+      };
 
-    return <canvas ref={canvasRef} {...props} ></canvas>
-}
+      requestRef.current = requestAnimationFrame(() => draw());
+      return () => cancelAnimationFrame(requestRef.current);
+    }
+  }, [context]);
+
+  return <canvas ref={canvasRef} {...props}></canvas>;
+};
 
 export default Canvas;
