@@ -65,6 +65,21 @@ interface Player {
   angle: number;
 }
 
+const move = (player: Player): Vec2 => ({
+  x: Math.cos(degreeToRadians(player.angle)) * movement,
+  y: Math.sin(degreeToRadians(player.angle)) * movement,
+});
+
+const addVec2 = (a: Vec2, b: Vec2): Vec2 => ({
+  x: a.x + b.x,
+  y: a.y + b.y,
+})
+
+const subVec2 = (a: Vec2, b: Vec2): Vec2 => ({
+  x: a.x - b.x,
+  y: a.y - b.y,
+})
+
 function App() {
   const player = useRef<Player>({
     pos: vec2(5, 5),
@@ -76,16 +91,10 @@ function App() {
       const { code } = event;
       switch (code) {
         case keys.up:
-          const playerCosF = Math.cos(degreeToRadians(player.current.angle)) * movement;
-          const playerSinF = Math.sin(degreeToRadians(player.current.angle)) * movement;
-          player.current.pos.x += playerCosF;
-          player.current.pos.y += playerSinF;
+          player.current.pos = addVec2(player.current.pos, move(player.current));
           break;
         case keys.down:
-          const playerCosB = Math.cos(degreeToRadians(player.current.angle)) * movement;
-          const playerSinB = Math.sin(degreeToRadians(player.current.angle)) * movement;
-          player.current.pos.x -= playerCosB;
-          player.current.pos.y -= playerSinB;
+          player.current.pos = subVec2(player.current.pos, move(player.current));
           break;
         case keys.left:
           player.current.angle -= rotation;
@@ -100,11 +109,6 @@ function App() {
   return (
     <div>
       <h1>Canvas?</h1>
-      <input
-        type="number"
-        placeholder="220"
-        onChange={(e) => (player.current.angle = parseInt(e.target.value))}
-      />
       <div>
         <Canvas
           clear={true}
