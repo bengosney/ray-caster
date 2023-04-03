@@ -64,7 +64,11 @@ function App() {
   return (
     <div>
       <h1>Canvas?</h1>
-      <input type="number" placeholder="220" onChange={(e) => player.current.angle = parseInt(e.target.value)} />
+      <input
+        type="number"
+        placeholder="220"
+        onChange={(e) => (player.current.angle = parseInt(e.target.value))}
+      />
       <div>
         <Canvas
           clear={true}
@@ -73,7 +77,6 @@ function App() {
           frame={(context, since) => {
             const angleInc = fov / context.canvas.width;
             const initalAngle = player.current.angle - fov / 2;
-
             const halfHeight = context.canvas.height / 2;
 
             for (let i = 0; i < context.canvas.width; i++) {
@@ -86,12 +89,31 @@ function App() {
                 ray.x += rayCos;
                 ray.y += raySin;
               }
-              const distance = Math.sqrt(Math.pow(player.current.pos.x - ray.x, 2) + Math.pow(player.current.pos.y - ray.y, 2));
+              const distance = Math.sqrt(
+                Math.pow(player.current.pos.x - ray.x, 2) +
+                  Math.pow(player.current.pos.y - ray.y, 2)
+              );
               const wallHeight = Math.floor(context.canvas.height / distance);
 
-              drawLine(vec2(i, 0), vec2(i, halfHeight - wallHeight), "cyan", context);
-              drawLine(vec2(i, halfHeight - wallHeight), vec2(i, halfHeight + wallHeight), "red", context);
-              drawLine(vec2(i, halfHeight + wallHeight), vec2(i, context.canvas.height), "green", context);
+              drawLine(
+                vec2(i, 0),
+                vec2(i, halfHeight - wallHeight),
+                "cyan",
+                context
+              );
+              drawLine(
+                vec2(i, halfHeight + wallHeight),
+                vec2(i, context.canvas.height),
+                "green",
+                context
+              );
+
+              drawLine(
+                vec2(i, halfHeight - wallHeight),
+                vec2(i, halfHeight + wallHeight),
+                "red",
+                context
+              );
             }
           }}
         />
