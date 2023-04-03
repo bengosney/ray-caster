@@ -1,6 +1,7 @@
 import Canvas from "./widgets/Canvas";
 import "./App.css";
 import { useEffect, useRef, useState } from "react";
+import { rgb, lightenDarkenRGB, RGBToHex } from "./utils/colour";
 
 const level = [
   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
@@ -143,10 +144,10 @@ function App() {
               const correctDistance = distance * Math.cos(degreeToRadians(rayAngle - angle));
               const wallHeight = Math.floor(context.canvas.height / correctDistance);
 
-              drawLine(vec2(i, 0), vec2(i, halfHeight - wallHeight), "cyan", context);
-              drawLine(vec2(i, halfHeight + wallHeight), vec2(i, context.canvas.height), "green", context);
-
-              drawLine(vec2(i, halfHeight - wallHeight), vec2(i, halfHeight + wallHeight), "red", context);
+              drawLine(vec2(i, 0), vec2(i, halfHeight - wallHeight), "#00FFFF", context);
+              drawLine(vec2(i, halfHeight + wallHeight), vec2(i, context.canvas.height), "#023020", context);
+              const colour = RGBToHex(lightenDarkenRGB(rgb(255,0,0), -(distance * 10)));
+              drawLine(vec2(i, halfHeight - wallHeight), vec2(i, halfHeight + wallHeight), colour, context);
             }
             fpsCounter.current = fpsCounter.current + 1;
           }}
