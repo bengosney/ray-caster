@@ -10,12 +10,14 @@ import { Data2D } from "./types/types";
 interface ProjectionData {
   width: number;
   height: number;
+  imageData: ImageData;
+  buffer: Uint8ClampedArray;
 }
 interface EngineData {
   fov: number;
   precision: number;
   scale: number;
-  projection: ProjectionData;
+  projection?: ProjectionData;
 }
 
 interface Level {
@@ -86,17 +88,29 @@ const actions = Object.fromEntries(
 );
 
 const movement = 0.005;
-const rotation = 0.15;
-
-const drawLine = (p1: Vec2, p2: Vec2, colour: string, context: CanvasRenderingContext2D) => {
-  context.strokeStyle = colour;
-  context.beginPath();
-  context.moveTo(p1.x, p1.y);
-  context.lineTo(p2.x, p2.y);
-  context.stroke();
-};
+const rotation = 0.1;
 
 const drawTexture = (
+  x: number,
+  wallHeight: number,
+  texturePositionX: number,
+  texture: Texture,
+  distance: number,
+  projection: ProjectionData,
+): void => {
+  const yIncrement: number = (wallHeight * 2) / texture.height;
+  let y: number = projection.height / 2 - wallHeight;
+  const pixelGroups: { [key: string]: number[] } = {};
+
+  for (let i = 0; i < texture.height; i++) {
+    const baseColour: RGB = texture.colors[texture.bitmap[i][texturePositionX]];
+    const distColour: RGB = lightenDarkenRGB(baseColour, -(distance * 10));
+    drawLine({ x, y }, { x, y: Math.floor(y + (yIncrement + 0.5)) }, distColour, projection);
+    y += yIncrement;
+  }
+};
+
+const drawTexture_old = (
   x: number,
   wallHeight: number,
   texturePositionX: number,
@@ -129,6 +143,19 @@ const drawTexture = (
     context.stroke();
   });
 };
+const drawPixel = (x: number, y: number, color: RGB, projection: ProjectionData) => {
+  const offset = 4 * (Math.floor(x) + Math.floor(y) * projection.width);
+  projection.buffer[offset] = color.r;
+  projection.buffer[offset + 1] = color.g;
+  projection.buffer[offset + 2] = color.b;
+  projection.buffer[offset + 3] = 255;
+};
+
+const drawLine = (p1: Vec2, p2: Vec2, colour: RGB, projection: ProjectionData) => {
+  for (let y = p1.y; y < p2.y; y++) {
+    drawPixel(p1.x, y, colour, projection);
+  }
+};
 
 interface Player {
   pos: Vec2;
@@ -151,14 +178,11 @@ function App() {
   const [fps, setFPS] = useState<number>(0);
   const width = 640;
   const height = 480;
+
   const engineDataRef = useRef<EngineData>({
     scale: 1,
     fov: 60,
     precision: 64,
-    projection: {
-      height: width,
-      width: height,
-    },
   });
 
   useEffect(() => {
@@ -215,13 +239,21 @@ function App() {
             const { scale } = engineDataRef.current;
             context.scale(scale, scale);
             context.translate(0.5, 0.5);
-            engineDataRef.current.projection.width = context.canvas.width / scale;
-            engineDataRef.current.projection.height = context.canvas.height / scale;
+            const width = context.canvas.width / scale;
+            const height = context.canvas.height / scale;
+            const imageData = context.createImageData(width, height);
+            const buffer = imageData.data;
+
+            engineDataRef.current.projection = { width, height, imageData, buffer };
           }}
           frame={(context, since) => {
             const { pos, angle } = player.current;
             const engineData = engineDataRef.current;
             const { projection } = engineData;
+
+            if (!projection) {
+              throw new Error("Projection not initialized");
+            }
 
             player.current.keys.forEach((action) => {
               switch (action) {
@@ -260,13 +292,14 @@ function App() {
               const correctDistance = distance * Math.cos(degreeToRadians(rayAngle - angle));
               const wallHeight = Math.floor(projection.height / correctDistance);
 
-              drawLine(vec2(i, 0), vec2(i, halfHeight - wallHeight), "#00FFFF", context);
-              drawLine(vec2(i, halfHeight + wallHeight), vec2(i, projection.height), "#023020", context);
+              drawLine(vec2(i, 0), vec2(i, halfHeight - wallHeight), rgb(0, 255, 255), projection);
+              drawLine(vec2(i, halfHeight + wallHeight), vec2(i, projection.height), rgb(2, 48, 32), projection);
 
               const texture = level.textures[wallID];
               const textureX = Math.floor(((ray.y + ray.x) * texture.width) % texture.width);
-              drawTexture(i, wallHeight, textureX, texture, distance, context, projection);
+              drawTexture(i, wallHeight, textureX, texture, distance, projection);
             }
+            context.putImageData(projection.imageData, 0, 0);
 
             fpsCounter.current = fpsCounter.current + 1;
           }}
