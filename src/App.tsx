@@ -3,6 +3,16 @@ import "./App.css";
 import { useEffect, useRef, useState } from "react";
 import { rgb, lightenDarkenRGB, RGBToHex, RGB } from "./utils/colour";
 
+interface ProjectionData {
+  width: number;
+  height: number;
+}
+interface EngineData {
+  fov: number;
+  precision: number;
+  projection: ProjectionData;
+}
+
 type Data2D = number[][];
 
 interface Texture {
@@ -52,8 +62,6 @@ const level: Level = {
     },
   ],
 };
-
-const precision = 64;
 
 type PlayerActions = "up" | "down" | "left" | "right";
 
@@ -120,8 +128,6 @@ const drawTexture = (
   }
 };
 
-const fov = 60;
-
 interface Player {
   pos: Vec2;
   angle: number;
@@ -161,6 +167,14 @@ function App() {
   });
   const fpsCounter = useRef<number>(0);
   const [fps, setfps] = useState<number>(0);
+  const engineDataRef = useRef<EngineData>({
+    fov: 60,
+    precision: 64,
+    projection: {
+      height: 640,
+      width: 480,
+    },
+  });
 
   useEffect(() => {
     document.addEventListener("keydown", (event) => {
@@ -194,6 +208,7 @@ function App() {
           width={800}
           frame={(context, since) => {
             const { pos, angle } = player.current;
+            const engineData = engineDataRef.current;
 
             player.current.keys.forEach((action) => {
               switch (action) {
@@ -222,15 +237,15 @@ function App() {
               }
             });
 
-            const angleInc = fov / context.canvas.width;
-            const initalAngle = player.current.angle - fov / 2;
+            const angleInc = engineData.fov / context.canvas.width;
+            const initalAngle = player.current.angle - engineData.fov / 2;
             const halfHeight = context.canvas.height / 2;
 
             for (let i = 0; i < context.canvas.width; i++) {
               const rayAngle = initalAngle + angleInc * i;
               const ray = vec2(pos.x, pos.y);
-              const rayCos = Math.cos(degreeToRadians(rayAngle)) / precision;
-              const raySin = Math.sin(degreeToRadians(rayAngle)) / precision;
+              const rayCos = Math.cos(degreeToRadians(rayAngle)) / engineData.precision;
+              const raySin = Math.sin(degreeToRadians(rayAngle)) / engineData.precision;
 
               while (level.data[Math.floor(ray.y)][Math.floor(ray.x)] == 0) {
                 ray.x += rayCos;
@@ -247,9 +262,6 @@ function App() {
 
               const texture = level.textures[wallID];
               const textureX = Math.floor(((ray.y + ray.x) * texture.width) % texture.width);
-              //const textureColour = texture.colors[texture.bitmap[1][textureX]];
-              //const colour = RGBToHex(lightenDarkenRGB(textureColour, -(distance * 10)));
-              //drawLine(vec2(i, halfHeight - wallHeight), vec2(i, halfHeight + wallHeight), colour, context);
               drawTexture(i, wallHeight, textureX, texture, distance, context);
             }
 
