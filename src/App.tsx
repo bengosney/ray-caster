@@ -22,23 +22,29 @@ const level = [
 
 const precision = 64;
 
-interface KeyMap {
-  up: string;
-  down: string;
-  left: string;
-  right: string;
-}
+type PlayerActions = "up" | "down" | "left" | "right";
 
-type Actions = keyof KeyMap;
-
+type KeyMap = {
+  [Action in PlayerActions]: string[];
+};
 const keys: KeyMap = {
-  up: "KeyW",
-  down: "KeyS",
-  left: "KeyA",
-  right: "KeyD",
+  up: ["KeyW", "ArrowUp"],
+  down: ["KeyS", "ArrowDown"],
+  left: ["KeyA", "ArrowLeft"],
+  right: ["KeyD", "ArrowRight"],
 };
 
-const actions = Object.fromEntries(Object.entries(keys).map((a) => a.reverse()));
+const actions = Object.fromEntries(
+  Object.entries(keys)
+    .map((mapping) => {
+      const [action, keys] = mapping;
+      return keys.map((key) => [key, action]);
+    })
+    .reduce((acc, cur) => {
+      cur.forEach((i) => acc.push(i));
+      return acc;
+    }, []),
+);
 
 const movement = 0.005;
 const rotation = 0.15;
@@ -64,7 +70,7 @@ const fov = 60;
 interface Player {
   pos: Vec2;
   angle: number;
-  keys: Set<Actions>;
+  keys: Set<PlayerActions>;
 }
 
 const move = (angle: number, amount: number): Vec2 => ({
@@ -96,7 +102,7 @@ function App() {
   const player = useRef<Player>({
     pos: vec2(5, 5),
     angle: 220,
-    keys: new Set<Actions>(),
+    keys: new Set<PlayerActions>(),
   });
   const fpsCounter = useRef<number>(0);
   const [fps, setfps] = useState<number>(0);
