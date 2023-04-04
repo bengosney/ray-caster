@@ -1,7 +1,7 @@
 import Canvas from "./widgets/Canvas";
 import "./App.css";
 import { useEffect, useRef, useState } from "react";
-import { rgb, lightenDarkenRGB, RGBToHex } from "./utils/colour";
+import { rgb, lightenDarkenRGB, RGBToHex, RGB } from "./utils/colour";
 
 type Data2D = number[][];
 
@@ -9,12 +9,12 @@ interface Texture {
   width: number;
   height: number;
   bitmap: Data2D;
-  colors: string[];
+  colors: RGB[];
 }
 
 interface Level {
   data: Data2D;
-  textures?: Texture[];
+  textures: Texture[];
 }
 
 const level: Level = {
@@ -48,7 +48,7 @@ const level: Level = {
         [1, 1, 1, 1, 1, 1, 1, 1],
         [0, 1, 0, 0, 0, 1, 0, 0],
       ],
-      colors: ["rgb(255, 241, 232)", "rgb(194, 195, 199)"],
+      colors: [rgb(255, 241, 232), rgb(194, 195, 199)],
     },
   ],
 };
@@ -96,6 +96,28 @@ const drawLine = (p1: Vec2, p2: Vec2, colour: string, context: CanvasRenderingCo
   context.moveTo(p1.x, p1.y);
   context.lineTo(p2.x, p2.y);
   context.stroke();
+};
+
+const drawTexture = (
+  x: number,
+  wallHeight: number,
+  texturePositionX: number,
+  texture: Texture,
+  distance: number,
+  context: CanvasRenderingContext2D,
+) => {
+  const yIncrement = (wallHeight * 2) / texture.height;
+  let y = context.canvas.height / 2 - wallHeight;
+
+  for (let i = 0; i < texture.height; i++) {
+    const baseColour = texture.colors[texture.bitmap[i][texturePositionX]];
+    context.strokeStyle = RGBToHex(lightenDarkenRGB(baseColour, -(distance * 10)));
+    context.beginPath();
+    context.moveTo(x, y);
+    context.lineTo(x, y + (yIncrement + 0.5));
+    context.stroke();
+    y += yIncrement;
+  }
 };
 
 const fov = 60;
@@ -166,6 +188,7 @@ function App() {
       <div>FPS: {fps}</div>
       <div>
         <Canvas
+          animating={true}
           clear={true}
           height={600}
           width={800}
@@ -213,14 +236,21 @@ function App() {
                 ray.x += rayCos;
                 ray.y += raySin;
               }
+              const wallID = level.data[Math.floor(ray.y)][Math.floor(ray.x)] - 1;
+
               const distance = Math.sqrt(Math.pow(pos.x - ray.x, 2) + Math.pow(pos.y - ray.y, 2));
               const correctDistance = distance * Math.cos(degreeToRadians(rayAngle - angle));
               const wallHeight = Math.floor(context.canvas.height / correctDistance);
 
               drawLine(vec2(i, 0), vec2(i, halfHeight - wallHeight), "#00FFFF", context);
               drawLine(vec2(i, halfHeight + wallHeight), vec2(i, context.canvas.height), "#023020", context);
-              const colour = RGBToHex(lightenDarkenRGB(rgb(255, 0, 0), -(distance * 10)));
-              drawLine(vec2(i, halfHeight - wallHeight), vec2(i, halfHeight + wallHeight), colour, context);
+
+              const texture = level.textures[wallID];
+              const textureX = Math.floor(((ray.y + ray.x) * texture.width) % texture.width);
+              //const textureColour = texture.colors[texture.bitmap[1][textureX]];
+              //const colour = RGBToHex(lightenDarkenRGB(textureColour, -(distance * 10)));
+              //drawLine(vec2(i, halfHeight - wallHeight), vec2(i, halfHeight + wallHeight), colour, context);
+              drawTexture(i, wallHeight, textureX, texture, distance, context);
             }
 
             fpsCounter.current = fpsCounter.current + 1;
