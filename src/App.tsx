@@ -10,6 +10,7 @@ interface ProjectionData {
 interface EngineData {
   fov: number;
   precision: number;
+  scale: number;
   projection: ProjectionData;
 }
 
@@ -113,9 +114,10 @@ const drawTexture = (
   texture: Texture,
   distance: number,
   context: CanvasRenderingContext2D,
+  projection: ProjectionData,
 ) => {
   const yIncrement = (wallHeight * 2) / texture.height;
-  let y = context.canvas.height / 2 - wallHeight;
+  let y = projection.height / 2 - wallHeight;
 
   for (let i = 0; i < texture.height; i++) {
     const baseColour = texture.colors[texture.bitmap[i][texturePositionX]];
@@ -167,12 +169,15 @@ function App() {
   });
   const fpsCounter = useRef<number>(0);
   const [fps, setfps] = useState<number>(0);
+  const width = 800;
+  const height = 600;
   const engineDataRef = useRef<EngineData>({
+    scale: 1,
     fov: 60,
     precision: 64,
     projection: {
-      height: 640,
-      width: 480,
+      height: width,
+      width: height,
     },
   });
 
@@ -204,11 +209,19 @@ function App() {
         <Canvas
           animating={true}
           clear={true}
-          height={600}
-          width={800}
+          width={width}
+          height={height}
+          init={(context) => {
+            const { scale } = engineDataRef.current;
+            context.scale(scale, scale);
+            context.translate(0.5, 0.5);
+            engineDataRef.current.projection.width = context.canvas.width / scale;
+            engineDataRef.current.projection.height = context.canvas.height / scale;
+          }}
           frame={(context, since) => {
             const { pos, angle } = player.current;
             const engineData = engineDataRef.current;
+            const { projection } = engineData;
 
             player.current.keys.forEach((action) => {
               switch (action) {
@@ -237,11 +250,11 @@ function App() {
               }
             });
 
-            const angleInc = engineData.fov / context.canvas.width;
+            const angleInc = engineData.fov / projection.width;
             const initalAngle = player.current.angle - engineData.fov / 2;
-            const halfHeight = context.canvas.height / 2;
+            const halfHeight = projection.height / 2;
 
-            for (let i = 0; i < context.canvas.width; i++) {
+            for (let i = 0; i < projection.width; i++) {
               const rayAngle = initalAngle + angleInc * i;
               const ray = vec2(pos.x, pos.y);
               const rayCos = Math.cos(degreeToRadians(rayAngle)) / engineData.precision;
@@ -255,14 +268,14 @@ function App() {
 
               const distance = Math.sqrt(Math.pow(pos.x - ray.x, 2) + Math.pow(pos.y - ray.y, 2));
               const correctDistance = distance * Math.cos(degreeToRadians(rayAngle - angle));
-              const wallHeight = Math.floor(context.canvas.height / correctDistance);
+              const wallHeight = Math.floor(projection.height / correctDistance);
 
               drawLine(vec2(i, 0), vec2(i, halfHeight - wallHeight), "#00FFFF", context);
-              drawLine(vec2(i, halfHeight + wallHeight), vec2(i, context.canvas.height), "#023020", context);
+              drawLine(vec2(i, halfHeight + wallHeight), vec2(i, projection.height), "#023020", context);
 
               const texture = level.textures[wallID];
               const textureX = Math.floor(((ray.y + ray.x) * texture.width) % texture.width);
-              drawTexture(i, wallHeight, textureX, texture, distance, context);
+              drawTexture(i, wallHeight, textureX, texture, distance, context, projection);
             }
 
             fpsCounter.current = fpsCounter.current + 1;
