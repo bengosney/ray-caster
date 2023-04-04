@@ -128,8 +128,8 @@ function App() {
       <div>
         <Canvas
           clear={true}
-          height={480}
-          width={640}
+          height={600}
+          width={800}
           frame={(context, since) => {
             const { pos, angle } = player.current;
 
@@ -173,6 +173,7 @@ function App() {
               const colour = RGBToHex(lightenDarkenRGB(rgb(255, 0, 0), -(distance * 10)));
               drawLine(vec2(i, halfHeight - wallHeight), vec2(i, halfHeight + wallHeight), colour, context);
             }
+
             fpsCounter.current = fpsCounter.current + 1;
           }}
         />
