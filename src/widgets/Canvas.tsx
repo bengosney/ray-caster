@@ -1,4 +1,4 @@
-import React, { HTMLProps, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import useTimeSinceLast from "../hooks/useTimeSinceLast";
 
 interface CanvasProps extends React.ComponentPropsWithoutRef<"canvas"> {
@@ -21,11 +21,13 @@ const Canvas = ({ frame, init = undefined, clear = undefined, animating = true, 
   }, [canvasRef]);
 
   useEffect(() => {
-    if (context) {
-      if (init) {
-        init(context);
-      }
+    if (context && init) {
+      init(context);
+    }
+  }, [context, init]);
 
+  useEffect(() => {
+    if (context) {
       const draw = () => {
         if (clear) {
           const { width, height } = context.canvas;
@@ -46,7 +48,7 @@ const Canvas = ({ frame, init = undefined, clear = undefined, animating = true, 
       requestRef.current = requestAnimationFrame(() => draw());
       return () => cancelAnimationFrame(requestRef.current);
     }
-  }, [context]);
+  }, [context, animating, clear, frame, since]);
 
   return <canvas ref={canvasRef} {...props}></canvas>;
 };
