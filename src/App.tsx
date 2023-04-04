@@ -95,7 +95,7 @@ const subVec2 = (a: Vec2, b: Vec2): Vec2 => ({
 
 const checkMove = (move: Vec2) => {
   const { x, y } = vec2Apply(move, Math.floor);
-  return level[x][y] == 0;
+  return level[y][x] == 0;
 };
 
 function App() {
