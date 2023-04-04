@@ -267,6 +267,26 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
+  const getMove = (since: number, func: (a: Vec2, b: Vec2) => Vec2): Vec2 => {
+    const { pos, angle } = player.current;
+    const { x, y } = func(pos, move(angle, movement * since));
+
+    if (checkMove({ x, y })) {
+      return { x, y };
+    } else {
+      const { x, y } = func(pos, move(angle, movement * 0.75 * since));
+
+      if (checkMove({ x, y: pos.y })) {
+        return { x, y: pos.y };
+      }
+      if (checkMove({ x: pos.x, y })) {
+        return { x: pos.x, y };
+      }
+    }
+
+    return pos;
+  };
+
   return (
     <div>
       <h1>Canvas?</h1>
@@ -291,40 +311,10 @@ function App() {
             player.current.keys.forEach((action) => {
               switch (action) {
                 case "up":
-                  {
-                    const { x, y } = addVec2(pos, move(angle, movement * since));
-
-                    if (checkMove({ x, y })) {
-                      player.current.pos = { x, y };
-                    } else {
-                      const { x, y } = addVec2(pos, move(angle, movement * 0.75 * since));
-
-                      if (checkMove({ x, y: pos.y })) {
-                        player.current.pos.x = x;
-                      }
-                      if (checkMove({ x: pos.x, y })) {
-                        player.current.pos.y = y;
-                      }
-                    }
-                  }
+                  player.current.pos = getMove(since, addVec2);
                   break;
                 case "down":
-                  {
-                    const { x, y } = subVec2(pos, move(angle, movement * since));
-
-                    if (checkMove({ x, y })) {
-                      player.current.pos = { x, y };
-                    } else {
-                      const { x, y } = subVec2(pos, move(angle, movement * 0.75 * since));
-
-                      if (checkMove({ x, y: pos.y })) {
-                        player.current.pos.x = x;
-                      }
-                      if (checkMove({ x: pos.x, y })) {
-                        player.current.pos.y = y;
-                      }
-                    }
-                  }
+                  player.current.pos = getMove(since, subVec2);
                   break;
                 case "left":
                   player.current.angle -= rotation * since;
