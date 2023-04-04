@@ -100,49 +100,18 @@ const drawTexture = (
 ): void => {
   const yIncrement: number = (wallHeight * 2) / texture.height;
   let y: number = projection.height / 2 - wallHeight;
-  const pixelGroups: { [key: string]: number[] } = {};
 
   for (let i = 0; i < texture.height; i++) {
     const baseColour: RGB = texture.colors[texture.bitmap[i][texturePositionX]];
     const distColour: RGB = lightenDarkenRGB(baseColour, -(distance * 10));
     drawLine({ x, y }, { x, y: Math.floor(y + (yIncrement + 0.5)) }, distColour, projection);
-    y += yIncrement;
-  }
-};
-
-const drawTexture_old = (
-  x: number,
-  wallHeight: number,
-  texturePositionX: number,
-  texture: Texture,
-  distance: number,
-  context: CanvasRenderingContext2D,
-  projection: ProjectionData,
-): void => {
-  const yIncrement: number = (wallHeight * 2) / texture.height;
-  let y: number = projection.height / 2 - wallHeight;
-  const pixelGroups: { [key: string]: number[] } = {};
-
-  for (let i = 0; i < texture.height; i++) {
-    const baseColour: RGB = texture.colors[texture.bitmap[i][texturePositionX]];
-    const hexColour: string = RGBToHex(lightenDarkenRGB(baseColour, -(distance * 10)));
-    if (!pixelGroups[hexColour]) {
-      pixelGroups[hexColour] = [];
+    if (y > projection.height) {
+      break;
     }
-    pixelGroups[hexColour].push(y);
     y += yIncrement;
   }
-
-  Object.keys(pixelGroups).forEach((colour) => {
-    context.strokeStyle = colour;
-    context.beginPath();
-    pixelGroups[colour].forEach((y) => {
-      context.moveTo(x, y);
-      context.lineTo(x, y + (yIncrement + 0.5));
-    });
-    context.stroke();
-  });
 };
+
 const drawPixel = (x: number, y: number, color: RGB, projection: ProjectionData) => {
   const offset = 4 * (Math.floor(x) + Math.floor(y) * projection.width);
   projection.buffer[offset] = color.r;
@@ -152,7 +121,8 @@ const drawPixel = (x: number, y: number, color: RGB, projection: ProjectionData)
 };
 
 const drawLine = (p1: Vec2, p2: Vec2, colour: RGB, projection: ProjectionData) => {
-  for (let y = p1.y; y < p2.y; y++) {
+  const clampY = (y: number) => Math.min(projection.height, Math.max(0, y));
+  for (let y = clampY(p1.y); y < clampY(p2.y); y++) {
     drawPixel(p1.x, y, colour, projection);
   }
 };
