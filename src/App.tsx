@@ -177,7 +177,7 @@ const subVec2 = (a: Vec2, b: Vec2): Vec2 => ({
 
 const checkMove = (move: Vec2) => {
   const { x, y } = vec2Apply(move, Math.floor);
-  return level.data[y][x] == 0;
+  return level.data[y][x] === 0;
 };
 
 const loadTexture = (imageSrc: string, textureID: number): void => {
@@ -292,17 +292,37 @@ function App() {
               switch (action) {
                 case "up":
                   {
-                    const newPos = addVec2(pos, move(angle, movement * since));
-                    if (checkMove(newPos)) {
-                      player.current.pos = newPos;
+                    const { x, y } = addVec2(pos, move(angle, movement * since));
+
+                    if (checkMove({ x, y })) {
+                      player.current.pos = { x, y };
+                    } else {
+                      const { x, y } = addVec2(pos, move(angle, movement * 0.75 * since));
+
+                      if (checkMove({ x, y: pos.y })) {
+                        player.current.pos.x = x;
+                      }
+                      if (checkMove({ x: pos.x, y })) {
+                        player.current.pos.y = y;
+                      }
                     }
                   }
                   break;
                 case "down":
                   {
-                    const newPos = subVec2(pos, move(angle, movement * since));
-                    if (checkMove(newPos)) {
-                      player.current.pos = newPos;
+                    const { x, y } = subVec2(pos, move(angle, movement * since));
+
+                    if (checkMove({ x, y })) {
+                      player.current.pos = { x, y };
+                    } else {
+                      const { x, y } = subVec2(pos, move(angle, movement * 0.75 * since));
+
+                      if (checkMove({ x, y: pos.y })) {
+                        player.current.pos.x = x;
+                      }
+                      if (checkMove({ x: pos.x, y })) {
+                        player.current.pos.y = y;
+                      }
                     }
                   }
                   break;
@@ -325,7 +345,7 @@ function App() {
               const rayCos = Math.cos(degreeToRadians(rayAngle)) / engineData.precision;
               const raySin = Math.sin(degreeToRadians(rayAngle)) / engineData.precision;
 
-              while (level.data[Math.floor(ray.y)][Math.floor(ray.x)] == 0) {
+              while (level.data[Math.floor(ray.y)][Math.floor(ray.x)] === 0) {
                 ray.x += rayCos;
                 ray.y += raySin;
               }
