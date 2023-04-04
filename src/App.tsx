@@ -3,22 +3,55 @@ import "./App.css";
 import { useEffect, useRef, useState } from "react";
 import { rgb, lightenDarkenRGB, RGBToHex } from "./utils/colour";
 
-const level = [
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-  [1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-];
+type Data2D = number[][];
+
+interface Texture {
+  width: number;
+  height: number;
+  bitmap: Data2D;
+  colors: string[];
+}
+
+interface Level {
+  data: Data2D;
+  textures?: Texture[];
+}
+
+const level: Level = {
+  data: [
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+  ],
+  textures: [
+    {
+      width: 8,
+      height: 8,
+      bitmap: [
+        [1, 1, 1, 1, 1, 1, 1, 1],
+        [0, 0, 0, 1, 0, 0, 0, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1],
+        [0, 1, 0, 0, 0, 1, 0, 0],
+        [1, 1, 1, 1, 1, 1, 1, 1],
+        [0, 0, 0, 1, 0, 0, 0, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1],
+        [0, 1, 0, 0, 0, 1, 0, 0],
+      ],
+      colors: ["rgb(255, 241, 232)", "rgb(194, 195, 199)"],
+    },
+  ],
+};
 
 const precision = 64;
 
@@ -95,7 +128,7 @@ const subVec2 = (a: Vec2, b: Vec2): Vec2 => ({
 
 const checkMove = (move: Vec2) => {
   const { x, y } = vec2Apply(move, Math.floor);
-  return level[y][x] == 0;
+  return level.data[y][x] == 0;
 };
 
 function App() {
@@ -176,7 +209,7 @@ function App() {
               const rayCos = Math.cos(degreeToRadians(rayAngle)) / precision;
               const raySin = Math.sin(degreeToRadians(rayAngle)) / precision;
 
-              while (level[Math.floor(ray.y)][Math.floor(ray.x)] == 0) {
+              while (level.data[Math.floor(ray.y)][Math.floor(ray.x)] == 0) {
                 ray.x += rayCos;
                 ray.y += raySin;
               }
