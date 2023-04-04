@@ -136,10 +136,20 @@ function App() {
             player.current.keys.forEach((action) => {
               switch (action) {
                 case "up":
-                  player.current.pos = addVec2(pos, move(angle, movement * since));
+                  {
+                    const newPos = addVec2(pos, move(angle, movement * since));
+                    if (checkMove(newPos)) {
+                      player.current.pos = newPos;
+                    }
+                  }
                   break;
                 case "down":
-                  player.current.pos = subVec2(pos, move(angle, movement * since));
+                  {
+                    const newPos = subVec2(pos, move(angle, movement * since));
+                    if (checkMove(newPos)) {
+                      player.current.pos = newPos;
+                    }
+                  }
                   break;
                 case "left":
                   player.current.angle -= rotation * since;
