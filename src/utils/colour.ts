@@ -13,3 +13,5 @@ export const lightenDarkenRGB = ({ r, g, b }: RGB, amt: number): RGB => ({
   g: Math.max(Math.min(g + amt, 255), 0),
   b: Math.max(Math.min(b + amt, 255), 0),
 });
+
+export const RGBMatch = (a: RGB, b: RGB): boolean => a.r == b.r && a.g == b.g && a.b == b.b;

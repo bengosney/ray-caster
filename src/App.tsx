@@ -1,7 +1,8 @@
 import Canvas from "./widgets/Canvas";
 import "./App.css";
 import { useEffect, useRef, useState } from "react";
-import { rgb, lightenDarkenRGB, RGBToHex, RGB } from "./utils/colour";
+import { rgb, lightenDarkenRGB, RGBToHex, RGB, RGBMatch } from "./utils/colour";
+import brick from "./brick.png";
 
 interface ProjectionData {
   width: number;
@@ -23,9 +24,15 @@ interface Texture {
   colors: RGB[];
 }
 
+interface TextureFile {
+  id: number;
+  src: string;
+}
+
 interface Level {
   data: Data2D;
   textures: Texture[];
+  textureFiles: TextureFile[];
 }
 
 const level: Level = {
@@ -62,6 +69,7 @@ const level: Level = {
       colors: [rgb(255, 241, 232), rgb(194, 195, 199)],
     },
   ],
+  textureFiles: [{ src: brick, id: 0 }],
 };
 
 type PlayerActions = "up" | "down" | "left" | "right";
@@ -161,6 +169,51 @@ const checkMove = (move: Vec2) => {
   return level.data[y][x] == 0;
 };
 
+const loadTexture = (imageSrc: string, textureID: number): void => {
+  const img = document.createElement("img");
+  const canvas = document.createElement("canvas");
+  img.src = imageSrc;
+  img.onload = () => {
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const context = canvas.getContext("2d");
+
+    if (context) {
+      context.drawImage(img, 0, 0, img.width, img.height);
+      const imageData = context.getImageData(0, 0, img.width, img.height).data;
+
+      const pixels: number[] = [];
+      const colours: RGB[] = [];
+      const colourIdx: string[] = [];
+      for (let i = 0; i < imageData.length; i += 4) {
+        const colour = rgb(imageData[i], imageData[i + 1], imageData[i + 2]);
+        const colourString = `${imageData[i]}-${imageData[i + 1]}-${imageData[i + 2]}`;
+
+        if (!colours.reduce<boolean>((prev, cur) => prev || RGBMatch(cur, colour), false)) {
+          colours.push(colour);
+          colourIdx.push(colourString);
+        }
+
+        pixels.push(colourIdx.indexOf(colourString));
+      }
+
+      const bitmap: Data2D = [];
+      while (pixels.length) {
+        bitmap.push(pixels.splice(0, img.width));
+      }
+
+      const texture: Texture = {
+        width: img.width,
+        height: img.height,
+        bitmap: bitmap,
+        colors: colours,
+      };
+
+      level.textures[textureID] = texture;
+    }
+  };
+};
+
 function App() {
   const player = useRef<Player>({
     pos: vec2(5, 5),
@@ -198,6 +251,8 @@ function App() {
       fpsCounter.current = 0;
     }, 1000);
 
+    level.textureFiles.forEach(({ src, id }) => loadTexture(src, id));
+
     return () => clearInterval(interval);
   }, []);
 
@@ -208,7 +263,6 @@ function App() {
       <div>
         <Canvas
           animating={true}
-          clear={true}
           width={width}
           height={height}
           init={(context) => {
