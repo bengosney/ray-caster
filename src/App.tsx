@@ -123,19 +123,30 @@ const drawTexture = (
   distance: number,
   context: CanvasRenderingContext2D,
   projection: ProjectionData,
-) => {
-  const yIncrement = (wallHeight * 2) / texture.height;
-  let y = projection.height / 2 - wallHeight;
+): void => {
+  const yIncrement: number = (wallHeight * 2) / texture.height;
+  let y: number = projection.height / 2 - wallHeight;
+  const pixelGroups: { [key: string]: number[] } = {};
 
   for (let i = 0; i < texture.height; i++) {
-    const baseColour = texture.colors[texture.bitmap[i][texturePositionX]];
-    context.strokeStyle = RGBToHex(lightenDarkenRGB(baseColour, -(distance * 10)));
-    context.beginPath();
-    context.moveTo(x, y);
-    context.lineTo(x, y + (yIncrement + 0.5));
-    context.stroke();
+    const baseColour: RGB = texture.colors[texture.bitmap[i][texturePositionX]];
+    const hexColour: string = RGBToHex(lightenDarkenRGB(baseColour, -(distance * 10)));
+    if (!pixelGroups[hexColour]) {
+      pixelGroups[hexColour] = [];
+    }
+    pixelGroups[hexColour].push(y);
     y += yIncrement;
   }
+
+  Object.keys(pixelGroups).forEach((colour) => {
+    context.strokeStyle = colour;
+    context.beginPath();
+    pixelGroups[colour].forEach((y) => {
+      context.moveTo(x, y);
+      context.lineTo(x, y + (yIncrement + 0.5));
+    });
+    context.stroke();
+  });
 };
 
 interface Player {
