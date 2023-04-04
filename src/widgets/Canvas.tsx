@@ -24,7 +24,7 @@ const Canvas = ({ frame, init = undefined, clear = undefined, animating = true, 
     if (context && init) {
       init(context);
     }
-  }, [context, init]);
+  }, [context]);
 
   useEffect(() => {
     if (context) {
@@ -48,7 +48,7 @@ const Canvas = ({ frame, init = undefined, clear = undefined, animating = true, 
       requestRef.current = requestAnimationFrame(() => draw());
       return () => cancelAnimationFrame(requestRef.current);
     }
-  }, [context, animating, clear, frame, since]);
+  }, [context, animating, clear]);
 
   return <canvas ref={canvasRef} {...props}></canvas>;
 };
