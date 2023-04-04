@@ -3,6 +3,9 @@ import "./App.css";
 import { useEffect, useRef, useState } from "react";
 import { rgb, lightenDarkenRGB, RGBToHex, RGB, RGBMatch } from "./utils/colour";
 import brick from "./brick.png";
+import { Vec2, addVec2, degreeToRadians, move, subVec2, vec2, vec2Apply } from "./utils/math";
+import { Texture, TextureFile, loadTexture } from "./utils/texture";
+import { Data2D } from "./types/types";
 
 interface ProjectionData {
   width: number;
@@ -13,20 +16,6 @@ interface EngineData {
   precision: number;
   scale: number;
   projection: ProjectionData;
-}
-
-type Data2D = number[][];
-
-interface Texture {
-  width: number;
-  height: number;
-  bitmap: Data2D;
-  colors: RGB[];
-}
-
-interface TextureFile {
-  id: number;
-  src: string;
 }
 
 interface Level {
@@ -99,14 +88,6 @@ const actions = Object.fromEntries(
 const movement = 0.005;
 const rotation = 0.15;
 
-interface Vec2 {
-  x: number;
-  y: number;
-}
-const vec2 = (x: number, y: number): Vec2 => ({ x, y });
-
-const degreeToRadians = (degree: number): number => (degree * Math.PI) / 180;
-
 const drawLine = (p1: Vec2, p2: Vec2, colour: string, context: CanvasRenderingContext2D) => {
   context.strokeStyle = colour;
   context.beginPath();
@@ -155,74 +136,9 @@ interface Player {
   keys: Set<PlayerActions>;
 }
 
-const move = (angle: number, amount: number): Vec2 => ({
-  x: Math.cos(degreeToRadians(angle)) * amount,
-  y: Math.sin(degreeToRadians(angle)) * amount,
-});
-
-const vec2Apply = (vec: Vec2, func: (x: number) => number): Vec2 => ({
-  x: func(vec.x),
-  y: func(vec.y),
-});
-
-const addVec2 = (a: Vec2, b: Vec2): Vec2 => ({
-  x: a.x + b.x,
-  y: a.y + b.y,
-});
-
-const subVec2 = (a: Vec2, b: Vec2): Vec2 => ({
-  x: a.x - b.x,
-  y: a.y - b.y,
-});
-
 const checkMove = (move: Vec2) => {
   const { x, y } = vec2Apply(move, Math.floor);
   return level.data[y][x] === 0;
-};
-
-const loadTexture = (imageSrc: string, textureID: number): void => {
-  const img = document.createElement("img");
-  const canvas = document.createElement("canvas");
-  img.src = imageSrc;
-  img.onload = () => {
-    canvas.width = img.width;
-    canvas.height = img.height;
-    const context = canvas.getContext("2d");
-
-    if (context) {
-      context.drawImage(img, 0, 0, img.width, img.height);
-      const imageData = context.getImageData(0, 0, img.width, img.height).data;
-
-      const pixels: number[] = [];
-      const colours: RGB[] = [];
-      const colourIdx: string[] = [];
-      for (let i = 0; i < imageData.length; i += 4) {
-        const colour = rgb(imageData[i], imageData[i + 1], imageData[i + 2]);
-        const colourString = `${imageData[i]}-${imageData[i + 1]}-${imageData[i + 2]}`;
-
-        if (!colours.reduce<boolean>((prev, cur) => prev || RGBMatch(cur, colour), false)) {
-          colours.push(colour);
-          colourIdx.push(colourString);
-        }
-
-        pixels.push(colourIdx.indexOf(colourString));
-      }
-
-      const bitmap: Data2D = [];
-      while (pixels.length) {
-        bitmap.push(pixels.splice(0, img.width));
-      }
-
-      const texture: Texture = {
-        width: img.width,
-        height: img.height,
-        bitmap: bitmap,
-        colors: colours,
-      };
-
-      level.textures[textureID] = texture;
-    }
-  };
 };
 
 function App() {
@@ -232,9 +148,9 @@ function App() {
     keys: new Set<PlayerActions>(),
   });
   const fpsCounter = useRef<number>(0);
-  const [fps, setfps] = useState<number>(0);
-  const width = 800;
-  const height = 600;
+  const [fps, setFPS] = useState<number>(0);
+  const width = 640;
+  const height = 480;
   const engineDataRef = useRef<EngineData>({
     scale: 1,
     fov: 60,
@@ -258,11 +174,11 @@ function App() {
     });
 
     const interval = setInterval(() => {
-      setfps(fpsCounter.current);
+      setFPS(fpsCounter.current);
       fpsCounter.current = 0;
     }, 1000);
 
-    level.textureFiles.forEach(({ src, id }) => loadTexture(src, id));
+    level.textureFiles.forEach(({ src, id }) => loadTexture(src, id).then((texture) => (level.textures[id] = texture)));
 
     return () => clearInterval(interval);
   }, []);
@@ -289,7 +205,6 @@ function App() {
 
   return (
     <div>
-      <h1>Canvas?</h1>
       <div>FPS: {fps}</div>
       <div>
         <Canvas

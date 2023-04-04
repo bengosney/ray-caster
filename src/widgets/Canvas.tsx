@@ -27,7 +27,7 @@ const Canvas = ({ frame, init = undefined, clear = undefined, animating = true, 
   }, [context]);
 
   useEffect(() => {
-    if (context) {
+    if (context && requestRef.current == 0) {
       const draw = () => {
         if (clear) {
           const { width, height } = context.canvas;
@@ -40,8 +40,11 @@ const Canvas = ({ frame, init = undefined, clear = undefined, animating = true, 
         }
 
         frame(context, since());
+
         if (animating) {
           requestRef.current = requestAnimationFrame(() => draw());
+        } else {
+          requestRef.current = 0;
         }
       };
 
