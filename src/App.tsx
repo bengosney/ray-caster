@@ -102,7 +102,7 @@ const actions = Object.fromEntries(
 const movement = 0.005;
 const rotation = 0.1;
 
-const drawTexture = (
+const drawTexture_old = (
   x: number,
   wallHeight: number,
   texturePositionX: number,
@@ -121,6 +121,26 @@ const drawTexture = (
       break;
     }
     y += yIncrement;
+  }
+};
+
+const drawTexture = (
+  x: number,
+  wallHeight: number,
+  texturePositionX: number,
+  texture: Texture,
+  distance: number,
+  projection: ProjectionData,
+): void => {
+  const from = projection.height / 2 - wallHeight;
+  const to = from + wallHeight * 2;
+  const textureInc = texture.height / (wallHeight * 2 + 1);
+
+  for (let y = from; y <= to; y++) {
+    const textureY = Math.floor((y - from) * textureInc);
+    const baseColour: RGB = texture.colors[texture.bitmap[textureY][texturePositionX]];
+    const distColour: RGB = lightenDarkenRGB(baseColour, -(distance * 10));
+    drawPixel({ x, y }, distColour, projection);
   }
 };
 
