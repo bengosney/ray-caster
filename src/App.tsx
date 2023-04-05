@@ -104,7 +104,7 @@ const actions = Object.fromEntries(
 const movement = 0.005;
 const rotation = 0.1;
 
-const drawTexture_old = (
+const drawTexture = (
   x: number,
   wallHeight: number,
   texturePositionX: number,
@@ -126,44 +126,22 @@ const drawTexture_old = (
   }
 };
 
-const drawTexture_new = (
-  x: number,
-  wallHeight: number,
-  texturePositionX: number,
-  texture: Texture,
-  distance: number,
-  projection: ProjectionData,
-): void => {
-  const from = projection.height / 2 - wallHeight;
-  const to = Math.min(from + wallHeight * 2, projection.height);
-  const textureInc = texture.height / (wallHeight * 2 + 1);
-
-  for (let y = Math.max(from, 0); y <= to; y++) {
-    const textureY = Math.floor((y - from) * textureInc);
-    const baseColour: RGB = texture.colors[texture.bitmap[textureY][texturePositionX]];
-    const distColour: RGB = lightenDarkenRGB(baseColour, -(distance * 10));
-    drawPixel({ x, y }, distColour, projection);
-  }
-};
-
-const drawTexture = (
-  x: number,
-  wallHeight: number,
-  texturePositionX: number,
-  texture: Texture,
-  distance: number,
-  projection: ProjectionData,
-): void => {
-  //drawTexture_new(x, wallHeight, texturePositionX, texture, distance, projection);
-  drawTexture_old(x, wallHeight, texturePositionX, texture, distance, projection);
-};
-
 const drawPixel = ({ x, y }: Vec2, color: RGB, projection: ProjectionData) => {
   const offset = 4 * (Math.floor(x) + Math.floor(y) * projection.width);
   projection.buffer[offset] = color.r;
   projection.buffer[offset + 1] = color.g;
   projection.buffer[offset + 2] = color.b;
   projection.buffer[offset + 3] = 255;
+};
+
+const getPixel = ({ x, y }: Vec2, projection: ProjectionData): RGB => {
+  const offset = 4 * (Math.floor(x) + Math.floor(y) * projection.width);
+  return rgb(projection.buffer[offset], projection.buffer[offset + 1], projection.buffer[offset + 2]);
+};
+
+const darkenPixel = (pos: Vec2, darken: number, projection: ProjectionData): void => {
+  const pixel = getPixel(pos, projection);
+  drawPixel(pos, lightenDarkenRGB(pixel, -darken), projection);
 };
 
 const drawLine = (p1: Vec2, p2: Vec2, colour: RGB, projection: ProjectionData) => {
@@ -332,11 +310,12 @@ function App() {
       const wallHeight = Math.floor(projection.height / correctDistance);
 
       drawLine(vec2(i, 0), vec2(i, halfHeight - wallHeight), rgb(0, 255, 255), projection);
-      drawFloor(i, wallHeight, player.current, rayAngle, projection);
 
       const texture = level.textures[wallID];
       const textureX = Math.floor(((ray.y + ray.x) * texture.width) % texture.width);
       drawTexture(i, wallHeight, textureX, texture, distance, projection);
+
+      drawFloor(i, wallHeight, player.current, rayAngle, projection);
     }
 
     if (engineData.scale != 1) {
