@@ -24,7 +24,7 @@ const Canvas = ({ frame, init = undefined, clear = undefined, animating = true, 
     if (context && init) {
       init(context);
     }
-  }, [context, init]);
+  }, [context, init, context?.canvas.width, context?.canvas.height]);
 
   useEffect(() => {
     if (context && requestRef.current === 0) {
