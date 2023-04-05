@@ -144,6 +144,10 @@ const drawFloor = (x: number, wallHeight: number, player: Player, rayAngle: numb
   const start = projection.height / 2 + wallHeight + 1;
   const directionCos = Math.cos(degreeToRadians(rayAngle));
   const directionSin = Math.sin(degreeToRadians(rayAngle));
+
+  let ao = 50;
+  const aoFactor = 1.9;
+
   for (let y = start; y < projection.height; y++) {
     const distance = projection.height / (2 * y - projection.height);
     const correctDistance = distance / Math.cos(degreeToRadians(player.angle) - degreeToRadians(rayAngle));
@@ -160,8 +164,9 @@ const drawFloor = (x: number, wallHeight: number, player: Player, rayAngle: numb
     const textureY = Math.floor(tileY * texture.height) % texture.height;
 
     const baseColour: RGB = texture.colors[texture.bitmap[textureX][textureY]];
-    const distColour: RGB = lightenDarkenRGB(baseColour, -(distance * 15));
+    const distColour: RGB = lightenDarkenRGB(baseColour, -(distance * 15 + ao));
     drawPixel({ x, y }, distColour, projection);
+    ao = Math.max(ao - aoFactor, 0);
   }
 };
 
