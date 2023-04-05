@@ -9,6 +9,7 @@ import { Data2D } from "./types/types";
 import brick from "./brick.png";
 import floor from "./floor.png";
 import { useMemo } from "react";
+import { type } from "os";
 
 interface ProjectionData {
   width: number;
@@ -124,7 +125,7 @@ const drawTexture_old = (
   }
 };
 
-const drawTexture = (
+const drawTexture_new = (
   x: number,
   wallHeight: number,
   texturePositionX: number,
@@ -133,15 +134,27 @@ const drawTexture = (
   projection: ProjectionData,
 ): void => {
   const from = projection.height / 2 - wallHeight;
-  const to = from + wallHeight * 2;
+  const to = Math.min(from + wallHeight * 2, projection.height);
   const textureInc = texture.height / (wallHeight * 2 + 1);
 
-  for (let y = from; y <= to; y++) {
+  for (let y = Math.max(from, 0); y <= to; y++) {
     const textureY = Math.floor((y - from) * textureInc);
     const baseColour: RGB = texture.colors[texture.bitmap[textureY][texturePositionX]];
     const distColour: RGB = lightenDarkenRGB(baseColour, -(distance * 10));
     drawPixel({ x, y }, distColour, projection);
   }
+};
+
+const drawTexture = (
+  x: number,
+  wallHeight: number,
+  texturePositionX: number,
+  texture: Texture,
+  distance: number,
+  projection: ProjectionData,
+): void => {
+  //drawTexture_new(x, wallHeight, texturePositionX, texture, distance, projection);
+  drawTexture_old(x, wallHeight, texturePositionX, texture, distance, projection);
 };
 
 const drawPixel = ({ x, y }: Vec2, color: RGB, projection: ProjectionData) => {
