@@ -8,6 +8,7 @@ import { Data2D } from "./types/types";
 
 import brick from "./brick.png";
 import floor from "./floor.png";
+import { useMemo } from "react";
 
 interface ProjectionData {
   width: number;
@@ -183,7 +184,7 @@ function App() {
   });
   const fpsCounter = useRef<number>(0);
   const [fps, setFPS] = useState<number>(0);
-  const width = Math.max(640, window.innerWidth / 2);
+  const width = Math.min(1020, Math.max(640, window.innerWidth * 0.9));
   const height = Math.floor(width / 1.333333);
 
   const engineDataRef = useRef<EngineData>({
@@ -299,7 +300,18 @@ function App() {
       const textureX = Math.floor(((ray.y + ray.x) * texture.width) % texture.width);
       drawTexture(i, wallHeight, textureX, texture, distance, projection);
     }
-    context.putImageData(projection.imageData, 0, 0);
+
+    if (engineData.scale != 1) {
+      const renderCanvas = document.createElement("canvas");
+      renderCanvas.width = projection.width;
+      renderCanvas.height = projection.height;
+      const renderContext = renderCanvas.getContext("2d");
+
+      renderContext?.putImageData(projection.imageData, 0, 0);
+      context.drawImage(renderCanvas, 0, 0);
+    } else {
+      context.putImageData(projection.imageData, 0, 0);
+    }
 
     fpsCounter.current = fpsCounter.current + 1;
   }, []);
