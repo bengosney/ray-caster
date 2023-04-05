@@ -2,10 +2,12 @@ import Canvas from "./widgets/Canvas";
 import "./App.css";
 import { useEffect, useRef, useState } from "react";
 import { rgb, lightenDarkenRGB, RGBToHex, RGB, RGBMatch } from "./utils/colour";
-import brick from "./brick.png";
 import { Vec2, addVec2, degreeToRadians, move, subVec2, vec2, vec2Apply } from "./utils/math";
 import { Texture, TextureFile, loadTexture } from "./utils/texture";
 import { Data2D } from "./types/types";
+
+import brick from "./brick.png";
+import floor from "./floor.png";
 
 interface ProjectionData {
   width: number;
@@ -45,6 +47,12 @@ const level: Level = {
   ],
   textures: [
     {
+      width: 1,
+      height: 1,
+      bitmap: [[0]],
+      colors: [rgb(0, 200, 0)],
+    },
+    {
       width: 8,
       height: 8,
       bitmap: [
@@ -60,7 +68,10 @@ const level: Level = {
       colors: [rgb(255, 241, 232), rgb(194, 195, 199)],
     },
   ],
-  textureFiles: [{ src: brick, id: 0 }],
+  textureFiles: [
+    { src: brick, id: 1 },
+    { src: floor, id: 0 },
+  ],
 };
 
 type PlayerActions = "up" | "down" | "left" | "right";
@@ -112,7 +123,7 @@ const drawTexture = (
   }
 };
 
-const drawPixel = (x: number, y: number, color: RGB, projection: ProjectionData) => {
+const drawPixel = ({ x, y }: Vec2, color: RGB, projection: ProjectionData) => {
   const offset = 4 * (Math.floor(x) + Math.floor(y) * projection.width);
   projection.buffer[offset] = color.r;
   projection.buffer[offset + 1] = color.g;
@@ -123,7 +134,33 @@ const drawPixel = (x: number, y: number, color: RGB, projection: ProjectionData)
 const drawLine = (p1: Vec2, p2: Vec2, colour: RGB, projection: ProjectionData) => {
   const clampY = (y: number) => Math.min(projection.height, Math.max(0, y));
   for (let y = clampY(p1.y); y < clampY(p2.y); y++) {
-    drawPixel(p1.x, y, colour, projection);
+    const { x } = p1;
+    drawPixel({ x, y }, colour, projection);
+  }
+};
+
+const drawFloor = (x: number, wallHeight: number, player: Player, rayAngle: number, projection: ProjectionData) => {
+  const start = projection.height / 2 + wallHeight + 1;
+  const directionCos = Math.cos(degreeToRadians(rayAngle));
+  const directionSin = Math.sin(degreeToRadians(rayAngle));
+  for (let y = start; y < projection.height; y++) {
+    const distance = projection.height / (2 * y - projection.height);
+    const correctDistance = distance / Math.cos(degreeToRadians(player.angle) - degreeToRadians(rayAngle));
+
+    const tileX = correctDistance * directionCos + player.pos.x / 2;
+    const tileY = correctDistance * directionSin + player.pos.y / 2;
+    const tile = level.data[Math.floor(tileY)][Math.floor(tileX)];
+
+    const texture = level.textures[0];
+    if (!texture) {
+      continue;
+    }
+
+    const textureX = Math.floor(tileX * texture.width) % texture.width;
+    const textureY = Math.floor(tileY * texture.height) % texture.height;
+
+    const color = texture.colors[texture.bitmap[textureX][textureY]];
+    drawPixel({ x, y }, color, projection);
   }
 };
 
@@ -256,14 +293,14 @@ function App() {
                 ray.x += rayCos;
                 ray.y += raySin;
               }
-              const wallID = level.data[Math.floor(ray.y)][Math.floor(ray.x)] - 1;
+              const wallID = level.data[Math.floor(ray.y)][Math.floor(ray.x)];
 
               const distance = Math.sqrt(Math.pow(pos.x - ray.x, 2) + Math.pow(pos.y - ray.y, 2));
               const correctDistance = distance * Math.cos(degreeToRadians(rayAngle - angle));
               const wallHeight = Math.floor(projection.height / correctDistance);
 
               drawLine(vec2(i, 0), vec2(i, halfHeight - wallHeight), rgb(0, 255, 255), projection);
-              drawLine(vec2(i, halfHeight + wallHeight), vec2(i, projection.height), rgb(2, 48, 32), projection);
+              drawFloor(i, wallHeight, player.current, rayAngle, projection);
 
               const texture = level.textures[wallID];
               const textureX = Math.floor(((ray.y + ray.x) * texture.width) % texture.width);
