@@ -149,7 +149,6 @@ const drawFloor = (x: number, wallHeight: number, player: Player, rayAngle: numb
 
     const tileX = correctDistance * directionCos + player.pos.x / 2;
     const tileY = correctDistance * directionSin + player.pos.y / 2;
-    const tile = level.data[Math.floor(tileY)][Math.floor(tileX)];
 
     const texture = level.textures[0];
     if (!texture) {
@@ -159,8 +158,9 @@ const drawFloor = (x: number, wallHeight: number, player: Player, rayAngle: numb
     const textureX = Math.floor(tileX * texture.width) % texture.width;
     const textureY = Math.floor(tileY * texture.height) % texture.height;
 
-    const color = texture.colors[texture.bitmap[textureX][textureY]];
-    drawPixel({ x, y }, color, projection);
+    const baseColour: RGB = texture.colors[texture.bitmap[textureX][textureY]];
+    const distColour: RGB = lightenDarkenRGB(baseColour, -(distance * 15));
+    drawPixel({ x, y }, distColour, projection);
   }
 };
 
