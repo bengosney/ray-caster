@@ -1,4 +1,3 @@
-import { resolve } from "path";
 import { RGB, RGBMatch, rgb } from "./colour";
 import { Data2D } from "../types/types";
 
@@ -14,11 +13,12 @@ export interface TextureFile {
   src: string;
 }
 
-export const loadTexture = (imageSrc: string, textureID: number): Promise<Texture> => {
+export const loadTexture = (imageSrc: string): Promise<Texture> => {
   return new Promise<Texture>((resolve, reject) => {
     const img = document.createElement("img");
     const canvas = document.createElement("canvas");
     img.src = imageSrc;
+    img.onerror = () => reject();
     img.onload = () => {
       canvas.width = img.width;
       canvas.height = img.height;

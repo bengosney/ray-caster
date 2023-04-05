@@ -1,7 +1,7 @@
 import Canvas from "./widgets/Canvas";
 import "./App.css";
-import { useEffect, useRef, useState } from "react";
-import { rgb, lightenDarkenRGB, RGBToHex, RGB, RGBMatch } from "./utils/colour";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { rgb, lightenDarkenRGB, RGB } from "./utils/colour";
 import { Vec2, addVec2, degreeToRadians, move, subVec2, vec2, vec2Apply } from "./utils/math";
 import { Texture, TextureFile, loadTexture } from "./utils/texture";
 import { Data2D } from "./types/types";
@@ -209,7 +209,7 @@ function App() {
       fpsCounter.current = 0;
     }, 1000);
 
-    level.textureFiles.forEach(({ src, id }) => loadTexture(src, id).then((texture) => (level.textures[id] = texture)));
+    level.textureFiles.forEach(({ src, id }) => loadTexture(src).then((texture) => (level.textures[id] = texture)));
 
     return () => clearInterval(interval);
   }, []);
@@ -234,83 +234,81 @@ function App() {
     return pos;
   };
 
+  const init = useCallback((context: CanvasRenderingContext2D) => {
+    const { scale } = engineDataRef.current;
+    context.scale(scale, scale);
+    context.translate(0.5, 0.5);
+    const width = context.canvas.width / scale;
+    const height = context.canvas.height / scale;
+    const imageData = context.createImageData(width, height);
+    const buffer = imageData.data;
+
+    engineDataRef.current.projection = { width, height, imageData, buffer };
+  }, []);
+
+  const frame = useCallback((context: CanvasRenderingContext2D, since: number) => {
+    const { pos, angle } = player.current;
+    const engineData = engineDataRef.current;
+    const { projection } = engineData;
+
+    if (!projection) {
+      throw new Error("Projection not initialized");
+    }
+
+    player.current.keys.forEach((action) => {
+      switch (action) {
+        case "up":
+          player.current.pos = getMove(since, addVec2);
+          break;
+        case "down":
+          player.current.pos = getMove(since, subVec2);
+          break;
+        case "left":
+          player.current.angle -= rotation * since;
+          break;
+        case "right":
+          player.current.angle += rotation * since;
+          break;
+      }
+    });
+
+    const angleInc = engineData.fov / projection.width;
+    const initalAngle = player.current.angle - engineData.fov / 2;
+    const halfHeight = projection.height / 2;
+
+    for (let i = 0; i < projection.width; i++) {
+      const rayAngle = initalAngle + angleInc * i;
+      const ray = vec2(pos.x, pos.y);
+      const rayCos = Math.cos(degreeToRadians(rayAngle)) / engineData.precision;
+      const raySin = Math.sin(degreeToRadians(rayAngle)) / engineData.precision;
+
+      while (level.data[Math.floor(ray.y)][Math.floor(ray.x)] === 0) {
+        ray.x += rayCos;
+        ray.y += raySin;
+      }
+      const wallID = level.data[Math.floor(ray.y)][Math.floor(ray.x)];
+
+      const distance = Math.sqrt(Math.pow(pos.x - ray.x, 2) + Math.pow(pos.y - ray.y, 2));
+      const correctDistance = distance * Math.cos(degreeToRadians(rayAngle - angle));
+      const wallHeight = Math.floor(projection.height / correctDistance);
+
+      drawLine(vec2(i, 0), vec2(i, halfHeight - wallHeight), rgb(0, 255, 255), projection);
+      drawFloor(i, wallHeight, player.current, rayAngle, projection);
+
+      const texture = level.textures[wallID];
+      const textureX = Math.floor(((ray.y + ray.x) * texture.width) % texture.width);
+      drawTexture(i, wallHeight, textureX, texture, distance, projection);
+    }
+    context.putImageData(projection.imageData, 0, 0);
+
+    fpsCounter.current = fpsCounter.current + 1;
+  }, []);
+
   return (
     <div>
       <div>FPS: {fps}</div>
       <div>
-        <Canvas
-          animating={true}
-          width={width}
-          height={height}
-          init={(context) => {
-            const { scale } = engineDataRef.current;
-            context.scale(scale, scale);
-            context.translate(0.5, 0.5);
-            const width = context.canvas.width / scale;
-            const height = context.canvas.height / scale;
-            const imageData = context.createImageData(width, height);
-            const buffer = imageData.data;
-
-            engineDataRef.current.projection = { width, height, imageData, buffer };
-          }}
-          frame={(context, since) => {
-            const { pos, angle } = player.current;
-            const engineData = engineDataRef.current;
-            const { projection } = engineData;
-
-            if (!projection) {
-              throw new Error("Projection not initialized");
-            }
-
-            player.current.keys.forEach((action) => {
-              switch (action) {
-                case "up":
-                  player.current.pos = getMove(since, addVec2);
-                  break;
-                case "down":
-                  player.current.pos = getMove(since, subVec2);
-                  break;
-                case "left":
-                  player.current.angle -= rotation * since;
-                  break;
-                case "right":
-                  player.current.angle += rotation * since;
-                  break;
-              }
-            });
-
-            const angleInc = engineData.fov / projection.width;
-            const initalAngle = player.current.angle - engineData.fov / 2;
-            const halfHeight = projection.height / 2;
-
-            for (let i = 0; i < projection.width; i++) {
-              const rayAngle = initalAngle + angleInc * i;
-              const ray = vec2(pos.x, pos.y);
-              const rayCos = Math.cos(degreeToRadians(rayAngle)) / engineData.precision;
-              const raySin = Math.sin(degreeToRadians(rayAngle)) / engineData.precision;
-
-              while (level.data[Math.floor(ray.y)][Math.floor(ray.x)] === 0) {
-                ray.x += rayCos;
-                ray.y += raySin;
-              }
-              const wallID = level.data[Math.floor(ray.y)][Math.floor(ray.x)];
-
-              const distance = Math.sqrt(Math.pow(pos.x - ray.x, 2) + Math.pow(pos.y - ray.y, 2));
-              const correctDistance = distance * Math.cos(degreeToRadians(rayAngle - angle));
-              const wallHeight = Math.floor(projection.height / correctDistance);
-
-              drawLine(vec2(i, 0), vec2(i, halfHeight - wallHeight), rgb(0, 255, 255), projection);
-              drawFloor(i, wallHeight, player.current, rayAngle, projection);
-
-              const texture = level.textures[wallID];
-              const textureX = Math.floor(((ray.y + ray.x) * texture.width) % texture.width);
-              drawTexture(i, wallHeight, textureX, texture, distance, projection);
-            }
-            context.putImageData(projection.imageData, 0, 0);
-
-            fpsCounter.current = fpsCounter.current + 1;
-          }}
-        />
+        <Canvas animating={true} width={width} height={height} init={init} frame={frame} />
       </div>
     </div>
   );

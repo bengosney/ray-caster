@@ -24,10 +24,10 @@ const Canvas = ({ frame, init = undefined, clear = undefined, animating = true, 
     if (context && init) {
       init(context);
     }
-  }, [context]);
+  }, [context, init]);
 
   useEffect(() => {
-    if (context && requestRef.current == 0) {
+    if (context && requestRef.current === 0) {
       const draw = () => {
         if (clear) {
           const { width, height } = context.canvas;
@@ -49,9 +49,12 @@ const Canvas = ({ frame, init = undefined, clear = undefined, animating = true, 
       };
 
       requestRef.current = requestAnimationFrame(() => draw());
-      return () => cancelAnimationFrame(requestRef.current);
+      return () => {
+        cancelAnimationFrame(requestRef.current);
+        requestRef.current = 0;
+      };
     }
-  }, [context, animating, clear]);
+  }, [context, animating, clear, frame, since]);
 
   return <canvas ref={canvasRef} {...props}></canvas>;
 };
