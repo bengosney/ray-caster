@@ -113,30 +113,16 @@ const drawTexture_old = (
   projection: ProjectionData,
 ): void => {
   const yIncrement: number = (wallHeight * 2) / texture.height;
-  let yStep: number = projection.height / 2 - wallHeight;
-
-  const wallBottom = projection.height / 2 + wallHeight;
-  const ao = 40;
-  const aoFactor = 15;
-  const aoStep = ao / aoFactor;
+  let y: number = projection.height / 2 - wallHeight;
 
   for (let i = 0; i < texture.height; i++) {
     const baseColour: RGB = texture.colors[texture.bitmap[i][texturePositionX]];
     const distColour: RGB = lightenDarkenRGB(baseColour, -(distance * 10));
-    const upTo = Math.floor(yStep + (yIncrement + 0.5));
-    for (let y = yStep; y < upTo; y++) {
-      const diffToWall = Math.abs(y - wallBottom);
-      if (diffToWall < aoFactor - distance) {
-        const c = lightenDarkenRGB(distColour, -(aoStep * (aoFactor - diffToWall)));
-        drawPixel({ x, y }, c, projection);
-      } else {
-        drawPixel({ x, y }, distColour, projection);
-      }
-    }
-    if (yStep > projection.height) {
+    drawLine({ x, y }, { x, y: Math.floor(y + (yIncrement + 0.5)) }, distColour, projection);
+    if (y > projection.height) {
       break;
     }
-    yStep += yIncrement;
+    y += yIncrement;
   }
 };
 
