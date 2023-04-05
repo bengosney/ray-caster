@@ -10,6 +10,7 @@ import brick from "./brick.png";
 import floor from "./floor.png";
 import { useMemo } from "react";
 import { type } from "os";
+import useMaxSize, { ASPECT_4_3 } from "./hooks/useMaxSize";
 
 interface ProjectionData {
   width: number;
@@ -222,8 +223,7 @@ function App() {
   });
   const fpsCounter = useRef<number>(0);
   const [fps, setFPS] = useState<number>(0);
-  const width = Math.min(1020, Math.max(640, window.innerWidth * 0.9));
-  const height = Math.floor(width / 1.333333);
+  const { width, height } = useMaxSize(ASPECT_4_3);
 
   const engineDataRef = useRef<EngineData>({
     scale: 1,
