@@ -183,8 +183,8 @@ function App() {
   });
   const fpsCounter = useRef<number>(0);
   const [fps, setFPS] = useState<number>(0);
-  const width = 640;
-  const height = 480;
+  const width = Math.max(640, window.innerWidth / 2);
+  const height = Math.floor(width / 1.333333);
 
   const engineDataRef = useRef<EngineData>({
     scale: 1,
