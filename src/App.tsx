@@ -8,13 +8,12 @@ import { Data2D } from "./types/types";
 
 import brick from "./brick.png";
 import floor from "./floor.png";
-import { useMemo } from "react";
-import { type } from "os";
 import useMaxSize, { ASPECT_4_3 } from "./hooks/useMaxSize";
 
 interface ProjectionData {
   width: number;
   height: number;
+  halfHeight: number;
   imageData: ImageData;
   buffer: Uint8ClampedArray;
 }
@@ -113,7 +112,7 @@ const drawTexture = (
   projection: ProjectionData,
 ): void => {
   const yIncrement: number = (wallHeight * 2) / texture.height;
-  let y: number = projection.height / 2 - wallHeight;
+  let y: number = projection.halfHeight - wallHeight;
 
   for (let i = 0; i < texture.height; i++) {
     const baseColour: RGB = texture.colors[texture.bitmap[i][texturePositionX]];
@@ -153,12 +152,22 @@ const drawLine = (p1: Vec2, p2: Vec2, colour: RGB, projection: ProjectionData) =
 };
 
 const drawFloor = (x: number, wallHeight: number, player: Player, rayAngle: number, projection: ProjectionData) => {
-  const start = projection.height / 2 + wallHeight + 1;
+  const halfHeight = projection.halfHeight;
+  const start = halfHeight + wallHeight + 1;
   const directionCos = Math.cos(degreeToRadians(rayAngle));
   const directionSin = Math.sin(degreeToRadians(rayAngle));
 
-  let ao = 50;
+  let y = start;
+  const wallAO = 30;
+  const wallAOFactor = wallAO / (wallHeight * 0.05);
+  for (let ao = wallAO; ao > 0; ao -= wallAOFactor) {
+    y -= 1;
+    darkenPixel({ x, y }, ao, projection);
+    ao -= wallAOFactor;
+  }
+
   const aoFactor = 1.9;
+  let ao = 50;
 
   for (let y = start; y < projection.height; y++) {
     const distance = projection.height / (2 * y - projection.height);
@@ -259,8 +268,9 @@ function App() {
     const height = context.canvas.height / scale;
     const imageData = context.createImageData(width, height);
     const buffer = imageData.data;
+    const halfHeight = height / 2;
 
-    engineDataRef.current.projection = { width, height, imageData, buffer };
+    engineDataRef.current.projection = { width, height, halfHeight, imageData, buffer };
   }, []);
 
   const frame = useCallback((context: CanvasRenderingContext2D, since: number) => {
@@ -291,7 +301,7 @@ function App() {
 
     const angleInc = engineData.fov / projection.width;
     const initalAngle = player.current.angle - engineData.fov / 2;
-    const halfHeight = projection.height / 2;
+    const halfHeight = projection.halfHeight;
 
     for (let i = 0; i < projection.width; i++) {
       const rayAngle = initalAngle + angleInc * i;
