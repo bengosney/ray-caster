@@ -26,6 +26,7 @@ interface EngineData {
 
 interface Sprite extends Texture {
   scale: number;
+  center: number;
 }
 
 interface Entity {
@@ -90,6 +91,7 @@ const level: Level = {
       scale: 10,
       width: 8,
       height: 8,
+      center: 4.5,
       bitmap: [
         [0, 0, 0, 1, 1, 0, 0, 0],
         [0, 0, 1, 1, 1, 1, 0, 0],
@@ -185,8 +187,8 @@ const drawLine = (p1: Vec2, p2: Vec2, colour: RGB, projection: ProjectionData) =
 };
 
 const drawBox = (topLeft: Vec2, width: number, height: number, colour: RGB, projection: ProjectionData) => {
-  for (let y = topLeft.y; y < topLeft.y + height; y++) {
-    for (let x = topLeft.x; x < topLeft.x + width; x++) {
+  for (let y = Math.max(0, topLeft.y); y < topLeft.y + height; y++) {
+    for (let x = Math.max(0, topLeft.x); x < topLeft.x + width; x++) {
       drawPixel({ x, y }, colour, projection);
     }
   }
@@ -233,7 +235,7 @@ const drawFloor = (x: number, wallHeight: number, player: Player, rayAngle: numb
 };
 
 const drawSprite = (
-  { scale: spriteScale, bitmap, colors, height, width }: Sprite,
+  { scale: spriteScale, bitmap, colors, height, width, center }: Sprite,
   position: Vec2,
   distance: number,
   projection: ProjectionData,
@@ -244,7 +246,7 @@ const drawSprite = (
     for (let x = 0; x < width; x++) {
       const colourIdx = bitmap[y][x];
 
-      const scaledX = x * scale + position.x;
+      const scaledX = (x - center) * scale + position.x;
       const scaledY = y * scale + (projection.halfHeight + position.y - height * scale);
 
       drawBox(vec2(scaledX, scaledY), scale, scale, colors[colourIdx], projection);
@@ -400,7 +402,7 @@ function App() {
       const angleTo = angleDegVec2(pos, entity.position);
       const diff = angleTo - wrappedAngle;
 
-      if (Math.abs(diff) < halfFOV) {
+      if (Math.abs(diff) < engineData.fov) {
         const distance = distVec2(entity.position, pos);
         const height = Math.floor(projection.height / distance);
         const x = (halfFOV + diff) * pixelPerDeg;
