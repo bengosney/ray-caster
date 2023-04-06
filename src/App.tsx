@@ -2,7 +2,7 @@ import Canvas from "./widgets/Canvas";
 import "./App.css";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { rgb, lightenDarkenRGB, RGB } from "./utils/colour";
-import { Vec2, addVec2, degreeToRadians, distVec2, move, subVec2, vec2, vec2Apply } from "./utils/math";
+import { Vec2, addVec2, angleDegVec2, degreeToRadians, distVec2, move, subVec2, vec2, vec2Apply } from "./utils/math";
 import { Texture, TextureFile, loadTexture } from "./utils/texture";
 import { Data2D } from "./types/types";
 
@@ -52,9 +52,9 @@ const level: Level = {
     [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
     [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
     [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1],
-    [1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1],
-    [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1],
+    [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1],
+    [1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1],
     [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
   ],
@@ -103,7 +103,7 @@ const level: Level = {
       colors: [rgb(0, 0, 0), rgb(200, 0, 0)],
     },
   ],
-  entities: [{ spriteID: 0, position: { x: 7, y: 7 } }],
+  entities: [{ spriteID: 0, position: { x: 5, y: 10 } }],
 };
 
 type PlayerActions = "up" | "down" | "left" | "right";
@@ -131,7 +131,7 @@ const actions = Object.fromEntries(
 );
 
 const movement = 0.005;
-const rotation = 0.1;
+const rotation = 0.05;
 
 const drawTexture = (
   x: number,
@@ -156,6 +156,9 @@ const drawTexture = (
 };
 
 const drawPixel = ({ x, y }: Vec2, color: RGB, projection: ProjectionData) => {
+  if (x > projection.width || y > projection.height) {
+    return;
+  }
   const offset = 4 * (Math.floor(x) + Math.floor(y) * projection.width);
   projection.buffer[offset] = color.r;
   projection.buffer[offset + 1] = color.g;
@@ -237,11 +240,11 @@ const drawSprite = (
 ) => {
   const scale = spriteScale - distance;
 
-  for (let y = 0; y < bitmap.length; y++) {
-    for (let x = 0; x < bitmap[y].length; x++) {
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
       const colourIdx = bitmap[y][x];
 
-      const scaledX = x * scale;
+      const scaledX = x * scale + position.x;
       const scaledY = y * scale + (projection.halfHeight + position.y - height * scale);
 
       drawBox(vec2(scaledX, scaledY), scale, scale, colors[colourIdx], projection);
@@ -359,8 +362,10 @@ function App() {
     });
 
     const angleInc = engineData.fov / projection.width;
-    const initalAngle = player.current.angle - engineData.fov / 2;
+    const initalAngle = angle - engineData.fov / 2;
     const halfHeight = projection.halfHeight;
+
+    const depthMap = [];
 
     for (let i = 0; i < projection.width; i++) {
       const rayAngle = initalAngle + angleInc * i;
@@ -376,6 +381,7 @@ function App() {
 
       const distance = Math.sqrt(Math.pow(pos.x - ray.x, 2) + Math.pow(pos.y - ray.y, 2));
       const correctDistance = distance * Math.cos(degreeToRadians(rayAngle - angle));
+      depthMap[i] = correctDistance;
       const wallHeight = Math.floor(projection.height / correctDistance);
 
       drawLine(vec2(i, 0), vec2(i, halfHeight - wallHeight), rgb(0, 255, 255), projection);
@@ -387,11 +393,27 @@ function App() {
       drawFloor(i, wallHeight, player.current, rayAngle, projection);
     }
 
+    const RealAngle = (angle: number): number => {
+      const a = Math.abs(angle % 360);
+      if (angle < 0) {
+        return 360 - a;
+      }
+      return a;
+    };
+
+    const realAngle = RealAngle(angle);
+    const pixelPerDeg = projection.width / engineData.fov;
+    const halfFOV = engineData.fov / 2;
     level.entities.forEach((entity) => {
-      const distance = distVec2(entity.position, pos);
-      setDebugText(`distance: ${distance}`);
-      const height = Math.floor(projection.height / distance);
-      drawSprite(level.sprites[entity.spriteID], vec2(0, height), distance, projection);
+      const angleTo = angleDegVec2(pos, entity.position);
+
+      if (angleTo > realAngle - halfFOV && angleTo < realAngle + halfFOV) {
+        const distance = distVec2(entity.position, pos);
+        const height = Math.floor(projection.height / distance);
+        const x = (angleTo - realAngle + halfFOV) * pixelPerDeg;
+
+        drawSprite(level.sprites[entity.spriteID], vec2(x, height), distance, projection);
+      }
     });
 
     if (engineData.scale != 1) {

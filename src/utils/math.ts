@@ -28,3 +28,7 @@ export const subVec2 = (a: Vec2, b: Vec2): Vec2 => ({
 });
 
 export const distVec2 = (a: Vec2, b: Vec2): number => Math.hypot(a.x - b.x, a.y - b.y);
+
+export const angleRadVec2 = (a: Vec2, b: Vec2): number => Math.atan2(b.y - a.y, b.x - a.x);
+
+export const angleDegVec2 = (a: Vec2, b: Vec2): number => (angleRadVec2(a, b) * 180) / Math.PI;
