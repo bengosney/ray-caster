@@ -404,10 +404,11 @@ function App() {
 
       if (Math.abs(diff) < engineData.fov) {
         const distance = distVec2(entity.position, pos);
-        const height = Math.floor(projection.height / distance);
+        const correctDistance = distance * Math.cos(degreeToRadians(angleTo / 2));
+        const height = Math.floor(projection.height / correctDistance);
         const x = (halfFOV + diff) * pixelPerDeg;
 
-        drawSprite(level.sprites[entity.spriteID], vec2(x, height), distance, projection);
+        drawSprite(level.sprites[entity.spriteID], vec2(x, height), correctDistance, projection);
       }
     });
 
