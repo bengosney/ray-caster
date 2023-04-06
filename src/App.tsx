@@ -131,7 +131,7 @@ const actions = Object.fromEntries(
 );
 
 const movement = 0.005;
-const rotation = 0.05;
+const rotation = 0.1;
 
 const drawTexture = (
   x: number,
