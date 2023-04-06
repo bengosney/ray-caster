@@ -2,7 +2,7 @@ import Canvas from "./widgets/Canvas";
 import "./App.css";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { rgb, lightenDarkenRGB, RGB } from "./utils/colour";
-import { Vec2, addVec2, degreeToRadians, move, subVec2, vec2, vec2Apply } from "./utils/math";
+import { Vec2, addVec2, degreeToRadians, distVec2, move, subVec2, vec2, vec2Apply } from "./utils/math";
 import { Texture, TextureFile, loadTexture } from "./utils/texture";
 import { Data2D } from "./types/types";
 
@@ -24,10 +24,21 @@ interface EngineData {
   projection?: ProjectionData;
 }
 
+interface Sprite extends Texture {
+  scale: number;
+}
+
+interface Entity {
+  spriteID: number;
+  position: Vec2;
+}
+
 interface Level {
   data: Data2D;
   textures: Texture[];
   textureFiles: TextureFile[];
+  sprites: Sprite[];
+  entities: Entity[];
 }
 
 const level: Level = {
@@ -41,8 +52,8 @@ const level: Level = {
     [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
     [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
     [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1],
     [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1],
     [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
@@ -74,6 +85,25 @@ const level: Level = {
     { src: brick, id: 1 },
     { src: floor, id: 0 },
   ],
+  sprites: [
+    {
+      scale: 10,
+      width: 8,
+      height: 8,
+      bitmap: [
+        [0, 0, 0, 1, 1, 0, 0, 0],
+        [0, 0, 1, 1, 1, 1, 0, 0],
+        [0, 1, 1, 1, 1, 1, 1, 0],
+        [1, 1, 1, 1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1],
+        [0, 1, 1, 1, 1, 1, 1, 0],
+        [0, 0, 1, 1, 1, 1, 0, 0],
+        [0, 0, 0, 1, 1, 0, 0, 0],
+      ],
+      colors: [rgb(0, 0, 0), rgb(200, 0, 0)],
+    },
+  ],
+  entities: [{ spriteID: 0, position: { x: 7, y: 7 } }],
 };
 
 type PlayerActions = "up" | "down" | "left" | "right";
@@ -151,6 +181,14 @@ const drawLine = (p1: Vec2, p2: Vec2, colour: RGB, projection: ProjectionData) =
   }
 };
 
+const drawBox = (topLeft: Vec2, width: number, height: number, colour: RGB, projection: ProjectionData) => {
+  for (let y = topLeft.y; y < topLeft.y + height; y++) {
+    for (let x = topLeft.x; x < topLeft.x + width; x++) {
+      drawPixel({ x, y }, colour, projection);
+    }
+  }
+};
+
 const drawFloor = (x: number, wallHeight: number, player: Player, rayAngle: number, projection: ProjectionData) => {
   const halfHeight = projection.halfHeight;
   const start = halfHeight + wallHeight + 1;
@@ -191,6 +229,26 @@ const drawFloor = (x: number, wallHeight: number, player: Player, rayAngle: numb
   }
 };
 
+const drawSprite = (
+  { scale: spriteScale, bitmap, colors, height, width }: Sprite,
+  position: Vec2,
+  distance: number,
+  projection: ProjectionData,
+) => {
+  const scale = spriteScale - distance;
+
+  for (let y = 0; y < bitmap.length; y++) {
+    for (let x = 0; x < bitmap[y].length; x++) {
+      const colourIdx = bitmap[y][x];
+
+      const scaledX = x * scale;
+      const scaledY = y * scale + (projection.halfHeight + position.y - height * scale);
+
+      drawBox(vec2(scaledX, scaledY), scale, scale, colors[colourIdx], projection);
+    }
+  }
+};
+
 interface Player {
   pos: Vec2;
   angle: number;
@@ -211,6 +269,7 @@ function App() {
   const fpsCounter = useRef<number>(0);
   const [fps, setFPS] = useState<number>(0);
   const { width, height } = useMaxSize(ASPECT_4_3);
+  const [debugText, setDebugText] = useState<string>("");
 
   const engineDataRef = useRef<EngineData>({
     scale: 1,
@@ -328,6 +387,13 @@ function App() {
       drawFloor(i, wallHeight, player.current, rayAngle, projection);
     }
 
+    level.entities.forEach((entity) => {
+      const distance = distVec2(entity.position, pos);
+      setDebugText(`distance: ${distance}`);
+      const height = Math.floor(projection.height / distance);
+      drawSprite(level.sprites[entity.spriteID], vec2(0, height), distance, projection);
+    });
+
     if (engineData.scale != 1) {
       const renderCanvas = document.createElement("canvas");
       renderCanvas.width = projection.width;
@@ -346,6 +412,7 @@ function App() {
   return (
     <div>
       <div>FPS: {fps}</div>
+      <pre>{debugText}</pre>
       <div>
         <Canvas animating={true} width={width} height={height} init={init} frame={frame} />
       </div>

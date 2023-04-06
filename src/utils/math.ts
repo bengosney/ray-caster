@@ -26,3 +26,5 @@ export const subVec2 = (a: Vec2, b: Vec2): Vec2 => ({
   x: a.x - b.x,
   y: a.y - b.y,
 });
+
+export const distVec2 = (a: Vec2, b: Vec2): number => Math.hypot(a.x - b.x, a.y - b.y);
