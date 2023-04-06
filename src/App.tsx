@@ -393,24 +393,17 @@ function App() {
       drawFloor(i, wallHeight, player.current, rayAngle, projection);
     }
 
-    const RealAngle = (angle: number): number => {
-      const a = Math.abs(angle % 360);
-      if (angle < 0) {
-        return 360 - a;
-      }
-      return a;
-    };
-
-    const realAngle = RealAngle(angle);
+    const wrappedAngle = angle % 360;
     const pixelPerDeg = projection.width / engineData.fov;
     const halfFOV = engineData.fov / 2;
     level.entities.forEach((entity) => {
       const angleTo = angleDegVec2(pos, entity.position);
+      const diff = angleTo - wrappedAngle;
 
-      if (angleTo > realAngle - halfFOV && angleTo < realAngle + halfFOV) {
+      if (Math.abs(diff) < halfFOV) {
         const distance = distVec2(entity.position, pos);
         const height = Math.floor(projection.height / distance);
-        const x = (angleTo - realAngle + halfFOV) * pixelPerDeg;
+        const x = (halfFOV + diff) * pixelPerDeg;
 
         drawSprite(level.sprites[entity.spriteID], vec2(x, height), distance, projection);
       }
