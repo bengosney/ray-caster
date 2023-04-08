@@ -108,7 +108,7 @@ const level: Level = {
   entities: [{ spriteID: 0, position: { x: 5, y: 10 } }],
 };
 
-type PlayerActions = "up" | "down" | "left" | "right";
+type PlayerActions = "up" | "down" | "left" | "right" | "strafe_left" | "strafe_right";
 
 type KeyMap = {
   [Action in PlayerActions]: string[];
@@ -116,8 +116,10 @@ type KeyMap = {
 const keys: KeyMap = {
   up: ["KeyW", "ArrowUp"],
   down: ["KeyS", "ArrowDown"],
-  left: ["KeyA", "ArrowLeft"],
-  right: ["KeyD", "ArrowRight"],
+  left: ["ArrowLeft"],
+  right: ["ArrowRight"],
+  strafe_left: ["KeyA"],
+  strafe_right: ["KeyD"],
 };
 
 const actions = Object.fromEntries(
@@ -234,12 +236,8 @@ const drawFloor = (x: number, wallHeight: number, player: Player, rayAngle: numb
   }
 };
 
-const drawSprite = (
-  { scale: spriteScale, bitmap, colors, height, width, center }: Sprite,
-  position: Vec2,
-  distance: number,
-  projection: ProjectionData,
-) => {
+const drawSprite = (sprite: Sprite, position: Vec2, distance: number, projection: ProjectionData) => {
+  const { scale: spriteScale, bitmap, colors, height, width, center } = sprite;
   const scale = spriteScale - distance;
 
   for (let y = 0; y < height; y++) {
@@ -304,14 +302,15 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
-  const getMove = (since: number, func: (a: Vec2, b: Vec2) => Vec2): Vec2 => {
-    const { pos, angle } = player.current;
-    const { x, y } = func(pos, move(angle, movement * since));
+  const getMove = (since: number, direction: number): Vec2 => {
+    const { pos, angle: _angle } = player.current;
+    const angle = _angle + direction;
+    const { x, y } = addVec2(pos, move(angle, movement * since));
 
     if (checkMove({ x, y })) {
       return { x, y };
     } else {
-      const { x, y } = func(pos, move(angle, movement * 0.75 * since));
+      const { x, y } = addVec2(pos, move(angle, movement * 0.75 * since));
 
       if (checkMove({ x, y: pos.y })) {
         return { x, y: pos.y };
@@ -349,16 +348,22 @@ function App() {
     player.current.keys.forEach((action) => {
       switch (action) {
         case "up":
-          player.current.pos = getMove(since, addVec2);
+          player.current.pos = getMove(since, 0);
           break;
         case "down":
-          player.current.pos = getMove(since, subVec2);
+          player.current.pos = getMove(since, 180);
           break;
         case "left":
           player.current.angle -= rotation * since;
           break;
         case "right":
           player.current.angle += rotation * since;
+          break;
+        case "strafe_left":
+          player.current.pos = getMove(since, -90);
+          break;
+        case "strafe_right":
+          player.current.pos = getMove(since, 90);
           break;
       }
     });
@@ -401,15 +406,12 @@ function App() {
     level.entities.forEach((entity) => {
       const angleTo = angleDegVec2(pos, entity.position);
       const diff = angleTo - wrappedAngle;
+      const distance = distVec2(entity.position, pos);
+      const correctDistance = distance;
+      const height = Math.floor(projection.height / correctDistance);
+      const x = (halfFOV + diff) * pixelPerDeg;
 
-      if (Math.abs(diff) < engineData.fov) {
-        const distance = distVec2(entity.position, pos);
-        const correctDistance = distance * Math.cos(degreeToRadians(angleTo / 2));
-        const height = Math.floor(projection.height / correctDistance);
-        const x = (halfFOV + diff) * pixelPerDeg;
-
-        drawSprite(level.sprites[entity.spriteID], vec2(x, height), correctDistance, projection);
-      }
+      drawSprite(level.sprites[entity.spriteID], vec2(x, height), correctDistance, projection);
     });
 
     if (engineData.scale != 1) {
