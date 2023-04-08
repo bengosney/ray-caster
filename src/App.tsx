@@ -6,6 +6,8 @@ import { Vec2, addVec2, angleDegVec2, degreeToRadians, distVec2, move, subVec2, 
 import { Texture, TextureFile, loadTexture } from "./utils/texture";
 import { Data2D } from "./types/types";
 
+import { makeNoise2D } from "open-simplex-noise";
+
 import brick from "./brick.png";
 import floor from "./floor.png";
 import useMaxSize, { ASPECT_4_3 } from "./hooks/useMaxSize";
@@ -42,8 +44,26 @@ interface Level {
   entities: Entity[];
 }
 
-const level: Level = {
-  data: [
+const getLevelData = (seed: number): Data2D => {
+  const size = 30;
+  const noise2D = makeNoise2D(seed);
+  const data: Data2D = [];
+  for (let x = 0; x <= size; x++) {
+    data[x] = [];
+    for (let y = 0; y <= size; y++) {
+      if (x == 0 || y == 0 || x == size || y == size) {
+        data[x][y] = 1;
+      } else {
+        data[x][y] = noise2D(x, y) > 0.5 ? 1 : 0;
+      }
+    }
+  }
+
+  return data;
+};
+
+/*
+[
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     [1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1],
     [1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1],
@@ -58,7 +78,11 @@ const level: Level = {
     [1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1],
     [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-  ],
+  ]
+  */
+
+const level: Level = {
+  data: getLevelData(1),
   textures: [
     {
       width: 1,
@@ -380,9 +404,11 @@ function App() {
       const rayCos = Math.cos(degreeToRadians(rayAngle)) / engineData.precision;
       const raySin = Math.sin(degreeToRadians(rayAngle)) / engineData.precision;
 
-      while (level.data[Math.floor(ray.y)][Math.floor(ray.x)] === 0) {
+      let tests = 0;
+      while (level.data[Math.floor(ray.y)][Math.floor(ray.x)] === 0 && tests < 1250) {
         ray.x += rayCos;
         ray.y += raySin;
+        tests++;
       }
       const wallID = level.data[Math.floor(ray.y)][Math.floor(ray.x)];
 
