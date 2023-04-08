@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { rgb, lightenDarkenRGB, RGB } from "./utils/colour";
 import { Vec2, addVec2, angleDegVec2, degreeToRadians, distVec2, move, subVec2, vec2, vec2Apply } from "./utils/math";
 import { Texture, TextureFile, loadTexture } from "./utils/texture";
-import { Data2D } from "./types/types";
 
 import { makeNoise2D } from "open-simplex-noise";
 
@@ -37,29 +36,16 @@ interface Entity {
 }
 
 interface Level {
-  data: Data2D;
+  data: (pos: Vec2) => number;
   textures: Texture[];
   textureFiles: TextureFile[];
   sprites: Sprite[];
   entities: Entity[];
 }
 
-const getLevelData = (seed: number): Data2D => {
-  const size = 30;
-  const noise2D = makeNoise2D(seed);
-  const data: Data2D = [];
-  for (let x = 0; x <= size; x++) {
-    data[x] = [];
-    for (let y = 0; y <= size; y++) {
-      if (x == 0 || y == 0 || x == size || y == size) {
-        data[x][y] = 1;
-      } else {
-        data[x][y] = noise2D(x, y) > 0.5 ? 1 : 0;
-      }
-    }
-  }
-
-  return data;
+const noise2D = makeNoise2D(0);
+const getLevelData = ({ x, y }: Vec2): number => {
+  return noise2D(x, y) > 0.5 ? 1 : 0;
 };
 
 /*
@@ -82,7 +68,7 @@ const getLevelData = (seed: number): Data2D => {
   */
 
 const level: Level = {
-  data: getLevelData(1),
+  data: getLevelData,
   textures: [
     {
       width: 1,
@@ -171,9 +157,10 @@ const drawTexture = (
 ): void => {
   const yIncrement: number = (wallHeight * 2) / texture.height;
   let y: number = projection.halfHeight - wallHeight;
+  const absPosition = Math.abs(texturePositionX);
 
   for (let i = 0; i < texture.height; i++) {
-    const baseColour: RGB = texture.colors[texture.bitmap[i][texturePositionX]];
+    const baseColour: RGB = texture.colors[texture.bitmap[i][absPosition]];
     const distColour: RGB = lightenDarkenRGB(baseColour, -(distance * 10));
     drawLine({ x, y }, { x, y: Math.floor(y + (yIncrement + 0.5)) }, distColour, projection);
     if (y > projection.height) {
@@ -247,11 +234,10 @@ const drawFloor = (x: number, wallHeight: number, player: Player, rayAngle: numb
 
     const texture = level.textures[0];
     if (!texture) {
-      continue;
     }
 
-    const textureX = Math.floor(tileX * texture.width) % texture.width;
-    const textureY = Math.floor(tileY * texture.height) % texture.height;
+    const textureX = Math.abs(Math.floor(tileX * texture.width) % texture.width);
+    const textureY = Math.abs(Math.floor(tileY * texture.height) % texture.height);
 
     const baseColour: RGB = texture.colors[texture.bitmap[textureX][textureY]];
     const distColour: RGB = lightenDarkenRGB(baseColour, -(distance * 15 + ao));
@@ -284,7 +270,7 @@ interface Player {
 
 const checkMove = (move: Vec2) => {
   const { x, y } = vec2Apply(move, Math.floor);
-  return level.data[y][x] === 0;
+  return level.data({ x, y }) === 0;
 };
 
 function App() {
@@ -405,22 +391,22 @@ function App() {
       const raySin = Math.sin(degreeToRadians(rayAngle)) / engineData.precision;
 
       let tests = 0;
-      while (level.data[Math.floor(ray.y)][Math.floor(ray.x)] === 0 && tests < 1250) {
+      while (level.data(vec2(Math.floor(ray.x), Math.floor(ray.y))) === 0 && tests < 1250) {
         ray.x += rayCos;
         ray.y += raySin;
         tests++;
       }
-      const wallID = level.data[Math.floor(ray.y)][Math.floor(ray.x)];
+      const wallID = level.data(vec2(Math.floor(ray.x), Math.floor(ray.y)));
 
       const distance = Math.sqrt(Math.pow(pos.x - ray.x, 2) + Math.pow(pos.y - ray.y, 2));
       const correctDistance = distance * Math.cos(degreeToRadians(rayAngle - angle));
       depthMap[i] = correctDistance;
       const wallHeight = Math.floor(projection.height / correctDistance);
 
-      drawLine(vec2(i, 0), vec2(i, halfHeight - wallHeight), rgb(0, 255, 255), projection);
+      drawLine(vec2(i, 0), vec2(i, halfHeight - wallHeight), rgb(0, 200, 200), projection);
 
       const texture = level.textures[wallID];
-      const textureX = Math.floor(((ray.y + ray.x) * texture.width) % texture.width);
+      const textureX = Math.floor((ray.y + ray.x) * texture.width) % texture.width;
       drawTexture(i, wallHeight, textureX, texture, distance, projection);
 
       drawFloor(i, wallHeight, player.current, rayAngle, projection);
