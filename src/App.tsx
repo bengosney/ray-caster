@@ -44,9 +44,7 @@ interface Level {
 }
 
 const noise2D = makeNoise2D(0);
-const getLevelData = ({ x, y }: Vec2): number => {
-  return noise2D(x, y) > 0.5 ? 1 : 0;
-};
+const getLevelData = ({ x, y }: Vec2): number => (noise2D(x, y) > 0.5 ? 1 : 0);
 
 /*
 [
@@ -282,7 +280,7 @@ function App() {
   const fpsCounter = useRef<number>(0);
   const [fps, setFPS] = useState<number>(0);
   const { width, height } = useMaxSize(ASPECT_4_3);
-  const [debugText, setDebugText] = useState<string>("");
+  const avgFps = useRef<Array<number>>([]);
 
   const engineDataRef = useRef<EngineData>({
     scale: 1,
@@ -304,6 +302,19 @@ function App() {
 
     const interval = setInterval(() => {
       setFPS(fpsCounter.current);
+      avgFps.current.push(fpsCounter.current);
+      if (avgFps.current.length > 5) {
+        const fps = avgFps.current.reduce((acc, cur) => acc + cur, 0) / (avgFps.current.length - 1);
+        avgFps.current.shift();
+        if (fps < 30) {
+          engineDataRef.current.scale = Math.min(4, engineDataRef.current.scale + 1);
+          avgFps.current = [];
+        }
+        if (fps > 60) {
+          engineDataRef.current.scale = Math.max(1, engineDataRef.current.scale - 1);
+          avgFps.current = [];
+        }
+      }
       fpsCounter.current = 0;
     }, 1000);
 
@@ -337,8 +348,8 @@ function App() {
     const { scale } = engineDataRef.current;
     context.scale(scale, scale);
     context.translate(0.5, 0.5);
-    const width = context.canvas.width / scale;
-    const height = context.canvas.height / scale;
+    const width = Math.floor(context.canvas.width / scale);
+    const height = Math.floor(context.canvas.height / scale);
     const imageData = context.createImageData(width, height);
     const buffer = imageData.data;
     const halfHeight = height / 2;
@@ -426,27 +437,28 @@ function App() {
       drawSprite(level.sprites[entity.spriteID], vec2(x, height), correctDistance, projection);
     });
 
-    if (engineData.scale != 1) {
-      const renderCanvas = document.createElement("canvas");
-      renderCanvas.width = projection.width;
-      renderCanvas.height = projection.height;
-      const renderContext = renderCanvas.getContext("2d");
+    const renderCanvas = document.createElement("canvas");
+    renderCanvas.width = projection.width;
+    renderCanvas.height = projection.height;
+    const renderContext = renderCanvas.getContext("2d");
 
-      renderContext?.putImageData(projection.imageData, 0, 0);
-      context.drawImage(renderCanvas, 0, 0);
-    } else {
-      context.putImageData(projection.imageData, 0, 0);
-    }
+    renderContext?.putImageData(projection.imageData, 0, 0);
+    context.drawImage(renderCanvas, 0, 0);
 
     fpsCounter.current = fpsCounter.current + 1;
   }, []);
 
   return (
     <div>
-      <div>FPS: {fps}</div>
-      <pre>{debugText}</pre>
       <div>
-        <Canvas animating={true} width={width} height={height} init={init} frame={frame} />
+        <Canvas
+          animating={true}
+          width={width}
+          height={height}
+          init={init}
+          frame={frame}
+          initDependency={engineDataRef.current.scale}
+        />
       </div>
     </div>
   );
