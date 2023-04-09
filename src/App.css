@@ -12,3 +12,19 @@ html, body {
 pre {
   font-size: initial;
 }
+
+
+.buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  align-items: center;
+  justify-items: center;
+}
+
+.buttons button {
+  display: block;
+  aspect-ratio: 1;
+  width: 4rem;
+  user-select: none;
+}

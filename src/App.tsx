@@ -1,6 +1,6 @@
 import Canvas from "./widgets/Canvas";
 import "./App.css";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { rgb, lightenDarkenRGB, RGB } from "./utils/colour";
 import { Vec2, addVec2, angleDegVec2, degreeToRadians, distVec2, move, subVec2, vec2, vec2Apply } from "./utils/math";
 import { Texture, TextureFile, loadTexture } from "./utils/texture";
@@ -288,6 +288,20 @@ function App() {
     precision: 64,
   });
 
+  const Control = useCallback(
+    ({ action, children }: { action: PlayerActions; children: ReactNode }) => (
+      <button
+        onTouchStart={() => player.current.keys.add(action)}
+        onMouseDown={() => player.current.keys.add(action)}
+        onTouchEnd={() => player.current.keys.delete(action)}
+        onMouseUp={() => player.current.keys.delete(action)}
+      >
+        {children}
+      </button>
+    ),
+    [],
+  );
+
   useEffect(() => {
     document.addEventListener("keydown", (event) => {
       const { code } = event;
@@ -459,6 +473,22 @@ function App() {
           frame={frame}
           initDependency={engineDataRef.current.scale}
         />
+      </div>
+      <div className="buttons">
+        <div></div>
+        <div>
+          <Control action="up">Forward</Control>
+        </div>
+        <div></div>
+        <div>
+          <Control action="left">Left</Control>
+        </div>
+        <div>
+          <Control action="down">Backward</Control>
+        </div>
+        <div>
+          <Control action="right">Right</Control>
+        </div>
       </div>
     </div>
   );
