@@ -24,7 +24,7 @@ pre {
 
 .buttons button {
   display: block;
-  aspect-ratio: 1;
+  aspect-ratio: 16 / 9;
   width: 4rem;
   user-select: none;
 }
