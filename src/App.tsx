@@ -21,7 +21,6 @@ interface ProjectionData {
 interface EngineData {
   fov: number;
   precision: number;
-  scale: number;
   projection?: ProjectionData;
 }
 
@@ -45,25 +44,6 @@ interface Level {
 
 const noise2D = makeNoise2D(0);
 const getLevelData = ({ x, y }: Vec2): number => (noise2D(x, y) > 0.5 ? 1 : 0);
-
-/*
-[
-    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    [1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1],
-    [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1],
-    [1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-  ]
-  */
 
 const level: Level = {
   data: getLevelData,
@@ -278,12 +258,9 @@ function App() {
     keys: new Set<PlayerActions>(),
   });
   const fpsCounter = useRef<number>(0);
-  const [fps, setFPS] = useState<number>(0);
   const { width, height } = useMaxSize(ASPECT_4_3);
-  const avgFps = useRef<Array<number>>([]);
 
   const engineDataRef = useRef<EngineData>({
-    scale: 1,
     fov: 60,
     precision: 64,
   });
@@ -314,27 +291,7 @@ function App() {
       player.current.keys.delete(actions[code]);
     });
 
-    const interval = setInterval(() => {
-      setFPS(fpsCounter.current);
-      avgFps.current.push(fpsCounter.current);
-      if (avgFps.current.length > 5) {
-        const fps = avgFps.current.reduce((acc, cur) => acc + cur, 0) / (avgFps.current.length - 1);
-        avgFps.current.shift();
-        if (fps < 30) {
-          engineDataRef.current.scale = Math.min(4, engineDataRef.current.scale + 1);
-          avgFps.current = [];
-        }
-        if (fps > 60) {
-          engineDataRef.current.scale = Math.max(1, engineDataRef.current.scale - 1);
-          avgFps.current = [];
-        }
-      }
-      fpsCounter.current = 0;
-    }, 1000);
-
     level.textureFiles.forEach(({ src, id }) => loadTexture(src).then((texture) => (level.textures[id] = texture)));
-
-    return () => clearInterval(interval);
   }, []);
 
   const getMove = (since: number, direction: number): Vec2 => {
@@ -359,11 +316,10 @@ function App() {
   };
 
   const init = useCallback((context: CanvasRenderingContext2D) => {
-    const { scale } = engineDataRef.current;
-    context.scale(scale, scale);
+    context.scale(1, 1);
     context.translate(0.5, 0.5);
-    const width = Math.floor(context.canvas.width / scale);
-    const height = Math.floor(context.canvas.height / scale);
+    const width = Math.floor(context.canvas.width);
+    const height = Math.floor(context.canvas.height);
     const imageData = context.createImageData(width, height);
     const buffer = imageData.data;
     const halfHeight = height / 2;
@@ -471,7 +427,6 @@ function App() {
           height={height}
           init={init}
           frame={frame}
-          initDependency={engineDataRef.current.scale}
         />
       </div>
       <div className="buttons">
