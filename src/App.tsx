@@ -224,9 +224,9 @@ const drawFloor = (x: number, wallHeight: number, player: Player, rayAngle: numb
   }
 };
 
-const drawSprite = (sprite: Sprite, position: Vec2, distance: number, projection: ProjectionData) => {
+const drawSprite = (sprite: Sprite, position: Vec2, distance: number, depthMap: number[], projection: ProjectionData) => {
   const { scale: spriteScale, bitmap, colors, height, width, center } = sprite;
-  const scale = spriteScale - distance;
+  const scale = spriteScale / distance;
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
@@ -235,7 +235,10 @@ const drawSprite = (sprite: Sprite, position: Vec2, distance: number, projection
       const scaledX = (x - center) * scale + position.x;
       const scaledY = y * scale + (projection.halfHeight + position.y - height * scale);
 
-      drawBox(vec2(scaledX, scaledY), scale, scale, colors[colourIdx], projection);
+      const screenCol = Math.floor(scaledX);
+      if (screenCol >= 0 && screenCol < projection.width && distance < depthMap[screenCol]) {
+        drawBox(vec2(scaledX, scaledY), scale, scale, colors[colourIdx], projection);
+      }
     }
   }
 };
@@ -363,7 +366,7 @@ function App() {
     const initalAngle = angle - engineData.fov / 2;
     const halfHeight = projection.halfHeight;
 
-    const depthMap = [];
+    const depthMap: number[] = [];
 
     for (let i = 0; i < projection.width; i++) {
       const rayAngle = initalAngle + angleInc * i;
@@ -398,13 +401,13 @@ function App() {
     const halfFOV = engineData.fov / 2;
     level.entities.forEach((entity) => {
       const angleTo = angleDegVec2(pos, entity.position);
-      const diff = angleTo - wrappedAngle;
+      const diff = ((angleTo - wrappedAngle + 540) % 360) - 180;
       const distance = distVec2(entity.position, pos);
-      const correctDistance = distance;
+      const correctDistance = distance * Math.cos(degreeToRadians(diff));
       const height = Math.floor(projection.height / correctDistance);
       const x = (halfFOV + diff) * pixelPerDeg;
 
-      drawSprite(level.sprites[entity.spriteID], vec2(x, height), correctDistance, projection);
+      drawSprite(level.sprites[entity.spriteID], vec2(x, height), correctDistance, depthMap, projection);
     });
 
     const renderCanvas = document.createElement("canvas");
