@@ -1,11 +1,16 @@
-import { RGB, RGBMatch, rgb } from "./colour";
+import { RGB, RGBA, rgb, rgba } from "./colour";
 import { Data2D } from "../types/types";
 
-export interface Texture {
+export interface Texture<C extends RGB | RGBA = RGB> {
   width: number;
   height: number;
   bitmap: Data2D;
-  colors: RGB[];
+  colors: C[];
+}
+
+export interface Sprite extends Texture<RGBA> {
+  scale: number;
+  center: number;
 }
 
 export interface TextureFile {
@@ -13,8 +18,10 @@ export interface TextureFile {
   src: string;
 }
 
-export const loadTexture = (imageSrc: string): Promise<Texture> => {
-  return new Promise<Texture>((resolve, reject) => {
+export function loadTexture(imageSrc: string, alpha: true): Promise<Texture<RGBA>>;
+export function loadTexture(imageSrc: string, alpha?: false): Promise<Texture<RGB>>;
+export function loadTexture(imageSrc: string, alpha = false): Promise<Texture<RGB> | Texture<RGBA>> {
+  return new Promise((resolve, reject) => {
     const img = document.createElement("img");
     const canvas = document.createElement("canvas");
     img.src = imageSrc;
@@ -29,18 +36,21 @@ export const loadTexture = (imageSrc: string): Promise<Texture> => {
         const imageData = context.getImageData(0, 0, img.width, img.height).data;
 
         const pixels: number[] = [];
-        const colours: RGB[] = [];
-        const colourIdx: string[] = [];
+        const colors: (RGB | RGBA)[] = [];
+        const colorIdx: string[] = [];
         for (let i = 0; i < imageData.length; i += 4) {
-          const colour = rgb(imageData[i], imageData[i + 1], imageData[i + 2]);
-          const colourString = `${imageData[i]}-${imageData[i + 1]}-${imageData[i + 2]}`;
+          const [r, g, b, a] = [imageData[i], imageData[i + 1], imageData[i + 2], imageData[i + 3]];
+          const color = alpha ? rgba(r, g, b, a) : rgb(r, g, b);
+          const colourString = alpha ? `${r}-${g}-${b}-${a}` : `${r}-${g}-${b}`;
 
-          if (!colours.reduce<boolean>((prev, cur) => prev || RGBMatch(cur, colour), false)) {
-            colours.push(colour);
-            colourIdx.push(colourString);
+          const existingIdx = colorIdx.indexOf(colourString);
+          if (existingIdx === -1) {
+            colorIdx.push(colourString);
+            colors.push(color);
+            pixels.push(colors.length - 1);
+          } else {
+            pixels.push(existingIdx);
           }
-
-          pixels.push(colourIdx.indexOf(colourString));
         }
 
         const bitmap = [];
@@ -48,15 +58,13 @@ export const loadTexture = (imageSrc: string): Promise<Texture> => {
           bitmap.push(pixels.splice(0, img.width));
         }
 
-        const texture = {
+        resolve({
           width: img.width,
           height: img.height,
-          bitmap: bitmap,
-          colors: colours,
-        };
-
-        resolve(texture);
+          bitmap,
+          colors,
+        });
       }
     };
   });
-};
+}
