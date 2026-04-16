@@ -1,8 +1,8 @@
 import Canvas from "./widgets/Canvas";
 import "./App.css";
-import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { ReactNode, useCallback, useEffect, useRef } from "react";
 import { rgb, lightenDarkenRGB, RGB } from "./utils/colour";
-import { Vec2, addVec2, angleDegVec2, degreeToRadians, distVec2, move, subVec2, vec2, vec2Apply } from "./utils/math";
+import { Vec2, addVec2, angleDegVec2, degreeToRadians, distVec2, move, vec2, vec2Apply } from "./utils/math";
 import { Texture, TextureFile, loadTexture } from "./utils/texture";
 
 import { makeNoise2D } from "open-simplex-noise";
