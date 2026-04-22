@@ -1,9 +1,9 @@
 import Canvas from "./widgets/Canvas";
 import "./App.css";
 import { ReactNode, useCallback, useEffect, useRef } from "react";
-import { rgb, rgba, RGB } from "./utils/colour";
+import { rgba, rgb } from "./utils/colour";
 import { Vec2, addVec2, angleDegVec2, degreeToRadians, distVec2, move, vec2, vec2Apply } from "./utils/math";
-import { Texture, loadTexture, Sprite } from "./utils/texture";
+import { Texture, Sprite, loadTexture } from "./utils/texture";
 import { ProjectionData, drawLine, drawTexture, drawFloor, drawSprite } from "./utils/draw";
 
 import { makeNoise2D } from "open-simplex-noise";
@@ -26,7 +26,7 @@ interface Entity {
 
 interface Level {
   data: (pos: Vec2) => number;
-  textures: Texture<RGB>[];
+  textures: Texture[];
   sprites: Sprite[];
   entities: Entity[];
 }
@@ -165,7 +165,7 @@ function App() {
     });
 
     level.textures.forEach((t, i) => loadTexture(t.src).then((loaded) => (level.textures[i] = loaded)));
-    level.sprites.forEach((s, i) => loadTexture(s.src, true).then((loaded) => (level.sprites[i] = { ...s, ...loaded })));
+    level.sprites.forEach((s, i) => loadTexture(s.src).then((loaded) => (level.sprites[i] = { ...s, ...loaded })));
   }, []);
 
   const getMove = (since: number, direction: number): Vec2 => {
@@ -258,7 +258,7 @@ function App() {
       depthMap[i] = correctDistance;
       const wallHeight = Math.floor(projection.height / correctDistance);
 
-      drawLine(vec2(i, 0), vec2(i, halfHeight - wallHeight), rgb(0, 200, 200), projection);
+      drawLine(vec2(i, 0), vec2(i, halfHeight - wallHeight), rgba(0, 200, 200, 255), projection);
 
       const texture = level.textures[wallID];
       const textureX = Math.floor((ray.y + ray.x) * texture.width) % texture.width;

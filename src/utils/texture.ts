@@ -1,22 +1,25 @@
-import { RGB, RGBA, rgb, rgba } from "./colour";
+import { RGBA, rgba } from "./colour";
 import { Data2D } from "../types/types";
 
-export interface Texture<C extends RGB | RGBA = RGB> {
+export interface Texture {
   width: number;
   height: number;
   bitmap: Data2D;
-  colors: C[];
+  colors: RGBA[];
   src: string;
 }
 
-export interface Sprite extends Texture<RGBA> {
+export interface Sprite extends Texture {
   scale: number;
   center: number;
 }
 
-export function loadTexture(imageSrc: string, alpha: true): Promise<Texture<RGBA>>;
-export function loadTexture(imageSrc: string, alpha?: false): Promise<Texture<RGB>>;
-export function loadTexture(imageSrc: string, alpha = false): Promise<Texture<RGB> | Texture<RGBA>> {
+export interface TextureFile {
+  id: number;
+  src: string;
+}
+
+export function loadTexture(imageSrc: string): Promise<Texture> {
   return new Promise((resolve, reject) => {
     const img = document.createElement("img");
     const canvas = document.createElement("canvas");
@@ -32,12 +35,12 @@ export function loadTexture(imageSrc: string, alpha = false): Promise<Texture<RG
         const imageData = context.getImageData(0, 0, img.width, img.height).data;
 
         const pixels: number[] = [];
-        const colors: (RGB | RGBA)[] = [];
+        const colors: RGBA[] = [];
         const colorIdx: string[] = [];
         for (let i = 0; i < imageData.length; i += 4) {
           const [r, g, b, a] = [imageData[i], imageData[i + 1], imageData[i + 2], imageData[i + 3]];
-          const color = alpha ? rgba(r, g, b, a) : rgb(r, g, b);
-          const colourString = alpha ? `${r}-${g}-${b}-${a}` : `${r}-${g}-${b}`;
+          const color = rgba(r, g, b, a);
+          const colourString = `${r}-${g}-${b}-${a}`;
 
           const existingIdx = colorIdx.indexOf(colourString);
           if (existingIdx === -1) {
@@ -59,6 +62,7 @@ export function loadTexture(imageSrc: string, alpha = false): Promise<Texture<RG
           height: img.height,
           bitmap,
           colors,
+          src: imageSrc,
         });
       }
     };

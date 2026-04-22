@@ -1,4 +1,4 @@
-import { RGB, RGBA, lightenDarkenRGB } from "./colour";
+import { RGBA, lightenDarkenRGB } from "./colour";
 import { Vec2, degreeToRadians, vec2 } from "./math";
 import { Texture, Sprite } from "./texture";
 
@@ -10,22 +10,27 @@ export interface ProjectionData {
   buffer: Uint8ClampedArray;
 }
 
-export const drawPixel = ({ x, y }: Vec2, color: RGB | RGBA, projection: ProjectionData) => {
+export const drawPixel = ({ x, y }: Vec2, color: RGBA, projection: ProjectionData) => {
   if (x > projection.width || y > projection.height) {
     return;
   }
   const offset = 4 * (Math.floor(x) + Math.floor(y) * projection.width);
-  const a = "a" in color ? color.a : 255;
+  const { r, g, b, a } = color;
   const ia = 255 - a;
-  projection.buffer[offset] = (color.r * a + projection.buffer[offset] * ia) / 255;
-  projection.buffer[offset + 1] = (color.g * a + projection.buffer[offset + 1] * ia) / 255;
-  projection.buffer[offset + 2] = (color.b * a + projection.buffer[offset + 2] * ia) / 255;
+  projection.buffer[offset] = (r * a + projection.buffer[offset] * ia) / 255;
+  projection.buffer[offset + 1] = (g * a + projection.buffer[offset + 1] * ia) / 255;
+  projection.buffer[offset + 2] = (b * a + projection.buffer[offset + 2] * ia) / 255;
   projection.buffer[offset + 3] = 255;
 };
 
-export const getPixel = ({ x, y }: Vec2, projection: ProjectionData): RGB => {
+export const getPixel = ({ x, y }: Vec2, projection: ProjectionData): RGBA => {
   const offset = 4 * (Math.floor(x) + Math.floor(y) * projection.width);
-  return { r: projection.buffer[offset], g: projection.buffer[offset + 1], b: projection.buffer[offset + 2] };
+  return {
+    r: projection.buffer[offset],
+    g: projection.buffer[offset + 1],
+    b: projection.buffer[offset + 2],
+    a: projection.buffer[offset + 3],
+  };
 };
 
 export const darkenPixel = (pos: Vec2, darken: number, projection: ProjectionData): void => {
@@ -33,7 +38,7 @@ export const darkenPixel = (pos: Vec2, darken: number, projection: ProjectionDat
   drawPixel(pos, lightenDarkenRGB(pixel, -darken), projection);
 };
 
-export const drawLine = (p1: Vec2, p2: Vec2, colour: RGB, projection: ProjectionData) => {
+export const drawLine = (p1: Vec2, p2: Vec2, colour: RGBA, projection: ProjectionData) => {
   const clampY = (y: number) => Math.min(projection.height, Math.max(0, y));
   for (let y = clampY(p1.y); y < clampY(p2.y); y++) {
     const { x } = p1;
@@ -62,8 +67,8 @@ export const drawTexture = (
   const absPosition = Math.abs(texturePositionX);
 
   for (let i = 0; i < texture.height; i++) {
-    const baseColour: RGB = texture.colors[texture.bitmap[i][absPosition]];
-    const distColour: RGB = lightenDarkenRGB(baseColour, -(distance * 10));
+    const baseColour = texture.colors[texture.bitmap[i][absPosition]];
+    const distColour = lightenDarkenRGB(baseColour, -(distance * 10));
     drawLine({ x, y }, { x, y: Math.floor(y + (yIncrement + 0.5)) }, distColour, projection);
     if (y > projection.height) {
       break;
@@ -107,8 +112,8 @@ export const drawFloor = (
     const textureX = Math.abs(Math.floor(tileX * floorTexture.width) % floorTexture.width);
     const textureY = Math.abs(Math.floor(tileY * floorTexture.height) % floorTexture.height);
 
-    const baseColour: RGB = floorTexture.colors[floorTexture.bitmap[textureX][textureY]];
-    const distColour: RGB = lightenDarkenRGB(baseColour, -(distance * 15 + ao));
+    const baseColour = floorTexture.colors[floorTexture.bitmap[textureX][textureY]];
+    const distColour = lightenDarkenRGB(baseColour, -(distance * 15 + ao));
     drawPixel({ x, y }, distColour, projection);
     ao = Math.max(ao - aoFactor, 0);
   }
