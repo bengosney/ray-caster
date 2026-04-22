@@ -3,7 +3,7 @@ import "./App.css";
 import { ReactNode, useCallback, useEffect, useRef } from "react";
 import { rgb, rgba, lightenDarkenRGB, RGB, RGBA } from "./utils/colour";
 import { Vec2, addVec2, angleDegVec2, degreeToRadians, distVec2, move, vec2, vec2Apply } from "./utils/math";
-import { Texture, TextureFile, loadTexture, Sprite } from "./utils/texture";
+import { Texture, loadTexture, Sprite } from "./utils/texture";
 
 import { makeNoise2D } from "open-simplex-noise";
 
@@ -33,9 +33,7 @@ interface Entity {
 interface Level {
   data: (pos: Vec2) => number;
   textures: Texture<RGB>[];
-  textureFiles: TextureFile[];
   sprites: Sprite[];
-  spriteFiles: TextureFile[];
   entities: Entity[];
 }
 
@@ -50,6 +48,7 @@ const level: Level = {
       height: 1,
       bitmap: [[0]],
       colors: [rgb(0, 200, 0)],
+      src: floor,
     },
     {
       width: 8,
@@ -65,11 +64,8 @@ const level: Level = {
         [0, 1, 0, 0, 0, 1, 0, 0],
       ],
       colors: [rgb(255, 241, 232), rgb(194, 195, 199)],
+      src: brick,
     },
-  ],
-  textureFiles: [
-    { src: brick, id: 1 },
-    { src: floor, id: 0 },
   ],
   sprites: [
     {
@@ -88,10 +84,8 @@ const level: Level = {
         [0, 0, 0, 1, 1, 0, 0, 0],
       ],
       colors: [rgba(0, 0, 0, 0), rgba(200, 0, 0, 255)],
+      src: dot,
     },
-  ],
-  spriteFiles: [
-    { src: dot, id: 0 },
   ],
   entities: [{ spriteID: 0, position: { x: 5, y: 10 } }],
 };
@@ -148,7 +142,7 @@ const drawTexture = (
   }
 };
 
-const drawPixel = ({ x, y }: Vec2, color: RGB|RGBA, projection: ProjectionData) => {
+const drawPixel = ({ x, y }: Vec2, color: RGB | RGBA, projection: ProjectionData) => {
   if (x > projection.width || y > projection.height) {
     return;
   }
@@ -226,7 +220,13 @@ const drawFloor = (x: number, wallHeight: number, player: Player, rayAngle: numb
   }
 };
 
-const drawSprite = (sprite: Sprite, position: Vec2, distance: number, depthMap: number[], projection: ProjectionData) => {
+const drawSprite = (
+  sprite: Sprite,
+  position: Vec2,
+  distance: number,
+  depthMap: number[],
+  projection: ProjectionData,
+) => {
   const { scale: spriteScale, bitmap, colors, height, width, center } = sprite;
   const scale = spriteScale / distance;
 
@@ -296,8 +296,8 @@ function App() {
       player.current.keys.delete(actions[code]);
     });
 
-    level.textureFiles.forEach(({ src, id }) => loadTexture(src).then((texture) => (level.textures[id] = texture)));
-    level.spriteFiles.forEach(({ src, id }) => loadTexture(src, true).then((sprite) => (level.sprites[id] = {...level.sprites[id], ...sprite})));
+    level.textures.forEach((t, i) => loadTexture(t.src).then((loaded) => (level.textures[i] = loaded)));
+    level.sprites.forEach((s, i) => loadTexture(s.src, true).then((loaded) => (level.sprites[i] = { ...s, ...loaded })));
   }, []);
 
   const getMove = (since: number, direction: number): Vec2 => {
@@ -427,13 +427,7 @@ function App() {
   return (
     <div>
       <div>
-        <Canvas
-          animating={true}
-          width={width}
-          height={height}
-          init={init}
-          frame={frame}
-        />
+        <Canvas animating={true} width={width} height={height} init={init} frame={frame} />
       </div>
       <div className="buttons">
         <div></div>

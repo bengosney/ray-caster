@@ -6,16 +6,12 @@ export interface Texture<C extends RGB | RGBA = RGB> {
   height: number;
   bitmap: Data2D;
   colors: C[];
+  src: string;
 }
 
 export interface Sprite extends Texture<RGBA> {
   scale: number;
   center: number;
-}
-
-export interface TextureFile {
-  id: number;
-  src: string;
 }
 
 export function loadTexture(imageSrc: string, alpha: true): Promise<Texture<RGBA>>;
