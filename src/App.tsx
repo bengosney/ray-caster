@@ -1,14 +1,15 @@
 import Canvas from "./widgets/Canvas";
 import "./App.css";
 import { ReactNode, useCallback, useEffect, useRef } from "react";
-import { rgb, lightenDarkenRGB, RGB } from "./utils/colour";
+import { rgb, rgba, lightenDarkenRGB, RGB, RGBA } from "./utils/colour";
 import { Vec2, addVec2, angleDegVec2, degreeToRadians, distVec2, move, vec2, vec2Apply } from "./utils/math";
-import { Texture, TextureFile, loadTexture } from "./utils/texture";
+import { Texture, TextureFile, loadTexture, Sprite } from "./utils/texture";
 
 import { makeNoise2D } from "open-simplex-noise";
 
 import brick from "./brick.png";
 import floor from "./floor.png";
+import dot from "./dot.png";
 import useMaxSize, { ASPECT_4_3 } from "./hooks/useMaxSize";
 
 interface ProjectionData {
@@ -24,11 +25,6 @@ interface EngineData {
   projection?: ProjectionData;
 }
 
-interface Sprite extends Texture {
-  scale: number;
-  center: number;
-}
-
 interface Entity {
   spriteID: number;
   position: Vec2;
@@ -36,9 +32,10 @@ interface Entity {
 
 interface Level {
   data: (pos: Vec2) => number;
-  textures: Texture[];
+  textures: Texture<RGB>[];
   textureFiles: TextureFile[];
   sprites: Sprite[];
+  spriteFiles: TextureFile[];
   entities: Entity[];
 }
 
@@ -76,7 +73,7 @@ const level: Level = {
   ],
   sprites: [
     {
-      scale: 10,
+      scale: 30,
       width: 8,
       height: 8,
       center: 4.5,
@@ -90,8 +87,11 @@ const level: Level = {
         [0, 0, 1, 1, 1, 1, 0, 0],
         [0, 0, 0, 1, 1, 0, 0, 0],
       ],
-      colors: [rgb(0, 0, 0), rgb(200, 0, 0)],
+      colors: [rgba(0, 0, 0, 0), rgba(200, 0, 0, 255)],
     },
+  ],
+  spriteFiles: [
+    { src: dot, id: 0 },
   ],
   entities: [{ spriteID: 0, position: { x: 5, y: 10 } }],
 };
@@ -148,14 +148,16 @@ const drawTexture = (
   }
 };
 
-const drawPixel = ({ x, y }: Vec2, color: RGB, projection: ProjectionData) => {
+const drawPixel = ({ x, y }: Vec2, color: RGB|RGBA, projection: ProjectionData) => {
   if (x > projection.width || y > projection.height) {
     return;
   }
   const offset = 4 * (Math.floor(x) + Math.floor(y) * projection.width);
-  projection.buffer[offset] = color.r;
-  projection.buffer[offset + 1] = color.g;
-  projection.buffer[offset + 2] = color.b;
+  const a = "a" in color ? color.a : 255;
+  const ia = 255 - a;
+  projection.buffer[offset] = (color.r * a + projection.buffer[offset] * ia) / 255;
+  projection.buffer[offset + 1] = (color.g * a + projection.buffer[offset + 1] * ia) / 255;
+  projection.buffer[offset + 2] = (color.b * a + projection.buffer[offset + 2] * ia) / 255;
   projection.buffer[offset + 3] = 255;
 };
 
@@ -177,7 +179,7 @@ const drawLine = (p1: Vec2, p2: Vec2, colour: RGB, projection: ProjectionData) =
   }
 };
 
-const drawBox = (topLeft: Vec2, width: number, height: number, colour: RGB, projection: ProjectionData) => {
+const drawBox = (topLeft: Vec2, width: number, height: number, colour: RGBA, projection: ProjectionData) => {
   for (let y = Math.max(0, topLeft.y); y < topLeft.y + height; y++) {
     for (let x = Math.max(0, topLeft.x); x < topLeft.x + width; x++) {
       drawPixel({ x, y }, colour, projection);
@@ -295,6 +297,7 @@ function App() {
     });
 
     level.textureFiles.forEach(({ src, id }) => loadTexture(src).then((texture) => (level.textures[id] = texture)));
+    level.spriteFiles.forEach(({ src, id }) => loadTexture(src, true).then((sprite) => (level.sprites[id] = {...level.sprites[id], ...sprite})));
   }, []);
 
   const getMove = (since: number, direction: number): Vec2 => {
