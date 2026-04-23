@@ -137,6 +137,7 @@ function App() {
     fov: 60,
     precision: 64,
   });
+  const renderCanvasRef = useRef<HTMLCanvasElement>(document.createElement("canvas"));
 
   const Control = useCallback(
     ({ action, children }: { action: PlayerActions; children: ReactNode }) => (
@@ -289,9 +290,9 @@ function App() {
       drawSprite(level.sprites[entity.spriteID], vec2(x, height), correctDistance, depthMap, projection);
     });
 
-    const renderCanvas = document.createElement("canvas");
-    renderCanvas.width = projection.width;
-    renderCanvas.height = projection.height;
+    const renderCanvas = renderCanvasRef.current;
+    if (renderCanvas.width !== projection.width) renderCanvas.width = projection.width;
+    if (renderCanvas.height !== projection.height) renderCanvas.height = projection.height;
     const renderContext = renderCanvas.getContext("2d");
 
     renderContext?.putImageData(projection.imageData, 0, 0);
