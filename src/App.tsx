@@ -282,7 +282,9 @@ function App() {
         tests++;
       } while (wallID === 0 && tests < 1250);
 
-      const distance = Math.sqrt(Math.pow(pos.x - ray.x, 2) + Math.pow(pos.y - ray.y, 2));
+      const dx = pos.x - ray.x;
+      const dy = pos.y - ray.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
       const correctDistance = distance * cosFromDegree(rayAngle - angle);
       depthMap[i] = correctDistance;
       const wallHeight = Math.floor(projection.height / correctDistance);
