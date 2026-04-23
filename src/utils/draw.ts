@@ -2,6 +2,8 @@ import { RGBA, lightenDarkenRGB } from "./colour";
 import { Vec2, degreeToRadians, vec2 } from "./math";
 import { Texture, Sprite } from "./texture";
 
+const REFERENCE_HEIGHT = 50;
+
 export interface ProjectionData {
   width: number;
   height: number;
@@ -127,7 +129,7 @@ export const drawSprite = (
   projection: ProjectionData,
 ) => {
   const { scale: spriteScale, bitmap, colors, height, width, center } = sprite;
-  const scale = spriteScale / distance;
+  const scale = (spriteScale * projection.height) / (REFERENCE_HEIGHT * distance);
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {

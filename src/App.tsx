@@ -63,7 +63,7 @@ const level: Level = {
   ],
   sprites: [
     {
-      scale: 30,
+      scale: 4,
       width: 8,
       height: 8,
       center: 4.5,
