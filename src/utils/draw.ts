@@ -98,7 +98,6 @@ export const drawFloor = (
   for (let ao = wallAO; ao > 0; ao -= wallAOFactor) {
     y -= 1;
     darkenPixel({ x, y }, ao, projection);
-    ao -= wallAOFactor;
   }
 
   const aoFactor = 1.9;
