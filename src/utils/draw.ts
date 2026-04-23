@@ -13,7 +13,7 @@ export interface ProjectionData {
 }
 
 export const drawPixel = ({ x, y }: Vec2, color: RGBA, projection: ProjectionData) => {
-  if (x > projection.width || y > projection.height) {
+  if (x < 0 || y < 0 || x >= projection.width || y >= projection.height) {
     return;
   }
   const offset = 4 * (Math.floor(x) + Math.floor(y) * projection.width);
