@@ -310,7 +310,6 @@ function App() {
         ray.x += rayCos;
         ray.y += raySin;
       }
-      console.error("wall not found");
       return 0;
     };
 
