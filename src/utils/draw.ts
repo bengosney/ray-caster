@@ -13,7 +13,7 @@ export interface ProjectionData {
 }
 
 export const drawPixel = ({ x, y }: Vec2, color: RGBA, projection: ProjectionData) => {
-  if (x > projection.width || y > projection.height) {
+  if (x < 0 || y < 0 || x >= projection.width || y >= projection.height) {
     return;
   }
   const offset = 4 * (Math.floor(x) + Math.floor(y) * projection.width);
@@ -94,11 +94,10 @@ export const drawFloor = (
 
   let y = start;
   const wallAO = 30;
-  const wallAOFactor = wallAO / (wallHeight * 0.05);
+  const wallAOFactor = wallAO / (wallHeight * 0.025);
   for (let ao = wallAO; ao > 0; ao -= wallAOFactor) {
     y -= 1;
     darkenPixel({ x, y }, ao, projection);
-    ao -= wallAOFactor;
   }
 
   const aoFactor = 1.9;

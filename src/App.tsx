@@ -137,6 +137,7 @@ function App() {
     fov: 60,
     precision: 64,
   });
+  const renderCanvasRef = useRef<HTMLCanvasElement>(document.createElement("canvas"));
 
   const Control = useCallback(
     ({ action, children }: { action: PlayerActions; children: ReactNode }) => (
@@ -153,19 +154,27 @@ function App() {
   );
 
   useEffect(() => {
-    document.addEventListener("keydown", (event) => {
+    const handleKeyDown = (event: KeyboardEvent) => {
       const { code } = event;
       if (code in actions) {
         player.current.keys.add(actions[code]);
       }
-    });
-    document.addEventListener("keyup", (event) => {
+    };
+    const handleKeyUp = (event: KeyboardEvent) => {
       const { code } = event;
       player.current.keys.delete(actions[code]);
-    });
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("keyup", handleKeyUp);
 
     level.textures.forEach((t, i) => loadTexture(t.src).then((loaded) => (level.textures[i] = loaded)));
     level.sprites.forEach((s, i) => loadTexture(s.src).then((loaded) => (level.sprites[i] = { ...s, ...loaded })));
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("keyup", handleKeyUp);
+    };
   }, []);
 
   const getMove = (since: number, direction: number): Vec2 => {
@@ -281,9 +290,9 @@ function App() {
       drawSprite(level.sprites[entity.spriteID], vec2(x, height), correctDistance, depthMap, projection);
     });
 
-    const renderCanvas = document.createElement("canvas");
-    renderCanvas.width = projection.width;
-    renderCanvas.height = projection.height;
+    const renderCanvas = renderCanvasRef.current;
+    if (renderCanvas.width !== projection.width) renderCanvas.width = projection.width;
+    if (renderCanvas.height !== projection.height) renderCanvas.height = projection.height;
     const renderContext = renderCanvas.getContext("2d");
 
     renderContext?.putImageData(projection.imageData, 0, 0);
