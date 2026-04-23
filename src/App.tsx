@@ -353,30 +353,32 @@ function App() {
         <Canvas animating={true} width={width} height={height} init={init} frame={frame} />
         <div className="fps-counter">{fps} FPS</div>
       </div>
-      <div className="resolution-controls">
-        <label>Resolution:</label>
-        <select value={resolutionIndex} onChange={(e) => setResolutionIndex(parseInt(e.target.value))}>
-          {resolutions.map((res, i) => (
-            <option key={res.label} value={i}>
-              {res.label}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="buttons">
-        <div></div>
-        <div>
-          <Control action="up">Forward</Control>
+      <div className="controles">
+        <div className="resolution-controls">
+          <label>Resolution:</label>
+          <select value={resolutionIndex} onChange={(e) => setResolutionIndex(parseInt(e.target.value))}>
+            {resolutions.map((res, i) => (
+              <option key={res.label} value={i}>
+                {res.label}
+              </option>
+            ))}
+          </select>
         </div>
-        <div></div>
-        <div>
-          <Control action="left">Left</Control>
-        </div>
-        <div>
-          <Control action="down">Backward</Control>
-        </div>
-        <div>
-          <Control action="right">Right</Control>
+        <div className="buttons">
+          <div></div>
+          <div>
+            <Control action="up">Forward</Control>
+          </div>
+          <div></div>
+          <div>
+            <Control action="left">Left</Control>
+          </div>
+          <div>
+            <Control action="down">Backward</Control>
+          </div>
+          <div>
+            <Control action="right">Right</Control>
+          </div>
         </div>
       </div>
     </div>

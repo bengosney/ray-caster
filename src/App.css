@@ -16,6 +16,11 @@ pre {
 
 .canvas-container {
   position: relative;
+
+  canvas {
+    max-height: calc(100vh - 200px);
+    max-width: 90vw;
+  }
 }
 
 .fps-counter {
