@@ -153,19 +153,27 @@ function App() {
   );
 
   useEffect(() => {
-    document.addEventListener("keydown", (event) => {
+    const handleKeyDown = (event: KeyboardEvent) => {
       const { code } = event;
       if (code in actions) {
         player.current.keys.add(actions[code]);
       }
-    });
-    document.addEventListener("keyup", (event) => {
+    };
+    const handleKeyUp = (event: KeyboardEvent) => {
       const { code } = event;
       player.current.keys.delete(actions[code]);
-    });
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("keyup", handleKeyUp);
 
     level.textures.forEach((t, i) => loadTexture(t.src).then((loaded) => (level.textures[i] = loaded)));
     level.sprites.forEach((s, i) => loadTexture(s.src).then((loaded) => (level.sprites[i] = { ...s, ...loaded })));
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("keyup", handleKeyUp);
+    };
   }, []);
 
   const getMove = (since: number, direction: number): Vec2 => {
