@@ -193,7 +193,10 @@ function App() {
         onTouchStart={() => pressKey(action)}
         onMouseDown={() => pressKey(action)}
         onTouchEnd={() => releaseKey(action)}
+        onTouchCancel={() => releaseKey(action)}
         onMouseUp={() => releaseKey(action)}
+        onMouseLeave={() => releaseKey(action)}
+        onContextMenu={(e) => e.preventDefault()}
       >
         {children}
       </button>
