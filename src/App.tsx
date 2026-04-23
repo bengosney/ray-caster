@@ -274,12 +274,13 @@ function App() {
       const raySin = sinFromDegree(rayAngle) / engineData.precision;
 
       let tests = 0;
-      while (level.data(vec2(Math.floor(ray.x), Math.floor(ray.y))) === 0 && tests < 1250) {
+      let wallID = 0;
+      do {
         ray.x += rayCos;
         ray.y += raySin;
+        wallID = level.data(vec2(Math.floor(ray.x), Math.floor(ray.y)));
         tests++;
-      }
-      const wallID = level.data(vec2(Math.floor(ray.x), Math.floor(ray.y)));
+      } while (wallID === 0 && tests < 1250);
 
       const distance = Math.sqrt(Math.pow(pos.x - ray.x, 2) + Math.pow(pos.y - ray.y, 2));
       const correctDistance = distance * cosFromDegree(rayAngle - angle);
