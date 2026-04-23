@@ -20,10 +20,7 @@ const normaliseIndex = (degree: number): number => {
   return index >= 0 ? index : index + 3600;
 };
 
-export const degreeToRadians = (degree: number): number => {
-  const cached = radiansCache[normaliseIndex(degree)];
-  return cached !== undefined ? cached : (degree * Math.PI) / 180;
-};
+export const degreeToRadians = (degree: number): number => (degree * Math.PI) / 180;
 
 export const cosFromDegree = (degree: number): number => {
   const cached = cosCache[normaliseIndex(degree)];
