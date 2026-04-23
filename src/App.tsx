@@ -21,7 +21,7 @@ import { makeNoise2D } from "open-simplex-noise";
 import brick from "./brick.png";
 import floor from "./floor.png";
 import dot from "./dot.png";
-import useMaxSize, { ASPECT_4_3 } from "./hooks/useMaxSize";
+import useMaxSize from "./hooks/useMaxSize";
 
 interface EngineData {
   fov: number;
