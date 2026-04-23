@@ -18,10 +18,16 @@ export const drawPixel = ({ x, y }: Vec2, color: RGBA, projection: ProjectionDat
   }
   const offset = 4 * (Math.floor(x) + Math.floor(y) * projection.width);
   const { r, g, b, a } = color;
-  const ia = 255 - a;
-  projection.buffer[offset] = (r * a + projection.buffer[offset] * ia) / 255;
-  projection.buffer[offset + 1] = (g * a + projection.buffer[offset + 1] * ia) / 255;
-  projection.buffer[offset + 2] = (b * a + projection.buffer[offset + 2] * ia) / 255;
+  if (a === 255) {
+    projection.buffer[offset] = r;
+    projection.buffer[offset + 1] = g;
+    projection.buffer[offset + 2] = b;
+  } else {
+    const ia = 255 - a;
+    projection.buffer[offset] = (r * a + projection.buffer[offset] * ia) / 255;
+    projection.buffer[offset + 1] = (g * a + projection.buffer[offset + 1] * ia) / 255;
+    projection.buffer[offset + 2] = (b * a + projection.buffer[offset + 2] * ia) / 255;
+  }
   projection.buffer[offset + 3] = 255;
 };
 
