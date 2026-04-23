@@ -1,6 +1,6 @@
 import Canvas from "./widgets/Canvas";
 import "./App.css";
-import { ReactNode, useCallback, useEffect, useRef } from "react";
+import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { rgba, rgb } from "./utils/colour";
 import { Vec2, addVec2, angleDegVec2, degreeToRadians, distVec2, move, vec2, vec2Apply } from "./utils/math";
 import { Texture, Sprite, loadTexture } from "./utils/texture";
@@ -131,7 +131,16 @@ function App() {
     keys: new Set<PlayerActions>(),
   });
   const fpsCounter = useRef<number>(0);
+  const [fps, setFps] = useState<number>(0);
   const { width, height } = useMaxSize(ASPECT_4_3);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFps(fpsCounter.current);
+      fpsCounter.current = 0;
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const engineDataRef = useRef<EngineData>({
     fov: 60,
@@ -303,8 +312,9 @@ function App() {
 
   return (
     <div>
-      <div>
+      <div className="canvas-container">
         <Canvas animating={true} width={width} height={height} init={init} frame={frame} />
+        <div className="fps-counter">{fps} FPS</div>
       </div>
       <div className="buttons">
         <div></div>
