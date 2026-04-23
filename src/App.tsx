@@ -267,20 +267,30 @@ function App() {
 
     const depthMap: number[] = [];
 
+    const getWallID = (ray: Vec2, rayCos: number, raySin: number): number => {
+      const pos: Vec2 = vec2(0, 0);
+      for (let i = 0; i < 1250; i++) {
+        pos.x = Math.floor(ray.x);
+        pos.y = Math.floor(ray.y);
+        const wallID = level.data(pos);
+        if (wallID !== 0) {
+          return wallID;
+        }
+
+        ray.x += rayCos;
+        ray.y += raySin;
+      }
+      console.error("wall not found");
+      return 0;
+    };
+
     for (let i = 0; i < projection.width; i++) {
       const rayAngle = initalAngle + angleInc * i;
       const ray = vec2(pos.x, pos.y);
       const rayCos = cosFromDegree(rayAngle) / engineData.precision;
       const raySin = sinFromDegree(rayAngle) / engineData.precision;
 
-      let tests = 0;
-      let wallID = 0;
-      do {
-        ray.x += rayCos;
-        ray.y += raySin;
-        wallID = level.data(vec2(Math.floor(ray.x), Math.floor(ray.y)));
-        tests++;
-      } while (wallID === 0 && tests < 1250);
+      const wallID = getWallID(ray, rayCos, raySin);
 
       const dx = pos.x - ray.x;
       const dy = pos.y - ray.y;
