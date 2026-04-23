@@ -2,6 +2,7 @@ import Canvas from "./widgets/Canvas";
 import "./App.css";
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { rgba, rgb } from "./utils/colour";
+import { ArrowBigDown, ArrowBigLeft, ArrowBigRight, ArrowBigUp } from "lucide-react";
 import {
   Vec2,
   addVec2,
@@ -151,6 +152,7 @@ function App() {
     { label: "1080p (1920×1080)", w: 1920, h: 1080 },
     { label: "4K (3840×2160)", w: 3840, h: 2160 },
   ];
+  const [activeKeys, setActiveKeys] = useState<Set<PlayerActions>>(new Set());
   const [resolutionIndex, setResolutionIndex] = useState<number>(0);
   const renderWidth = resolutions[resolutionIndex].w;
   const renderHeight = resolutions[resolutionIndex].h;
@@ -170,30 +172,45 @@ function App() {
   });
   const renderCanvasRef = useRef<HTMLCanvasElement>(document.createElement("canvas"));
 
+  const pressKey = useCallback((action: PlayerActions) => {
+    player.current.keys.add(action);
+    setActiveKeys((prev) => new Set(prev).add(action));
+  }, []);
+
+  const releaseKey = useCallback((action: PlayerActions) => {
+    player.current.keys.delete(action);
+    setActiveKeys((prev) => {
+      const s = new Set(prev);
+      s.delete(action);
+      return s;
+    });
+  }, []);
+
   const Control = useCallback(
     ({ action, children }: { action: PlayerActions; children: ReactNode }) => (
       <button
-        onTouchStart={() => player.current.keys.add(action)}
-        onMouseDown={() => player.current.keys.add(action)}
-        onTouchEnd={() => player.current.keys.delete(action)}
-        onMouseUp={() => player.current.keys.delete(action)}
+        className={activeKeys.has(action) ? "active" : undefined}
+        onTouchStart={() => pressKey(action)}
+        onMouseDown={() => pressKey(action)}
+        onTouchEnd={() => releaseKey(action)}
+        onMouseUp={() => releaseKey(action)}
       >
         {children}
       </button>
     ),
-    [],
+    [activeKeys, pressKey, releaseKey],
   );
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       const { code } = event;
       if (code in actions) {
-        player.current.keys.add(actions[code]);
+        pressKey(actions[code]);
       }
     };
     const handleKeyUp = (event: KeyboardEvent) => {
       const { code } = event;
-      player.current.keys.delete(actions[code]);
+      releaseKey(actions[code]);
     };
 
     document.addEventListener("keydown", handleKeyDown);
@@ -206,7 +223,7 @@ function App() {
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("keyup", handleKeyUp);
     };
-  }, []);
+  }, [pressKey, releaseKey]);
 
   const getMove = (since: number, direction: number): Vec2 => {
     const { pos, angle: _angle } = player.current;
@@ -353,30 +370,40 @@ function App() {
         <Canvas animating={true} width={width} height={height} init={init} frame={frame} />
         <div className="fps-counter">{fps} FPS</div>
       </div>
-      <div className="resolution-controls">
-        <label>Resolution:</label>
-        <select value={resolutionIndex} onChange={(e) => setResolutionIndex(parseInt(e.target.value))}>
-          {resolutions.map((res, i) => (
-            <option key={res.label} value={i}>
-              {res.label}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="buttons">
-        <div></div>
-        <div>
-          <Control action="up">Forward</Control>
+      <div className="controles">
+        <div className="buttons">
+          <div></div>
+          <div>
+            <Control action="up">
+              <ArrowBigUp />
+            </Control>
+          </div>
+          <div></div>
+          <div>
+            <Control action="left">
+              <ArrowBigLeft />
+            </Control>
+          </div>
+          <div>
+            <Control action="down">
+              <ArrowBigDown />
+            </Control>
+          </div>
+          <div>
+            <Control action="right">
+              <ArrowBigRight />
+            </Control>
+          </div>
         </div>
-        <div></div>
-        <div>
-          <Control action="left">Left</Control>
-        </div>
-        <div>
-          <Control action="down">Backward</Control>
-        </div>
-        <div>
-          <Control action="right">Right</Control>
+        <div className="resolution-controls">
+          <label>Resolution:</label>
+          <select value={resolutionIndex} onChange={(e) => setResolutionIndex(parseInt(e.target.value))}>
+            {resolutions.map((res, i) => (
+              <option key={res.label} value={i}>
+                {res.label}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
     </div>
