@@ -7,6 +7,7 @@ html, body {
   justify-content: center;
   font-size: calc(10px + 2vmin);
   color: white;
+  font-family: monospace;
 }
 
 pre {
@@ -16,9 +17,10 @@ pre {
 
 .canvas-container {
   position: relative;
+  margin-top: 1rem;
 
   canvas {
-    max-height: calc(100vh - 200px);
+    max-height: calc(100vh - 11rem);
     max-width: 90vw;
   }
 }
@@ -42,8 +44,28 @@ pre {
   font-size: 14px;
 }
 
-.resolution-controls input[type="range"] {
-  width: 150px;
+.resolution-controls select {
+  background: #3a3f4b;
+  color: #c8ccd4;
+  border: none;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 13px;
+  padding: 0.3rem 0.5rem;
+  cursor: pointer;
+  box-shadow: 0 2px 0 #1a1d24, 0 0 0 1px #1a1d24;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23c8ccd4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  padding-right: 1.8rem;
+}
+
+.controles {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
 }
 
 .buttons {
@@ -52,11 +74,36 @@ pre {
   grid-template-rows: repeat(2, 1fr);
   align-items: center;
   justify-items: center;
+  gap: 4px;
+  width: calc((3rem * 3) + (4px * 2));
+  padding: 1rem 0;
 }
 
 .buttons button {
   display: block;
-  aspect-ratio: 16 / 9;
-  width: 4rem;
+  aspect-ratio: 1;
+  width: 3rem;
   user-select: none;
+  background: #3a3f4b;
+  color: #c8ccd4;
+  border: none;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #1a1d24, 0 0 0 1px #1a1d24;
+  transition: background 80ms, transform 80ms, box-shadow 80ms;
+}
+
+.buttons button:hover {
+  background: #4a5060;
+  color: #e8ecf4;
+}
+
+.buttons button:active, .buttons button.active {
+  background: #2e3240;
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #1a1d24, 0 0 0 1px #1a1d24;
 }
