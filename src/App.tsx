@@ -142,7 +142,19 @@ function App() {
   });
   const fpsCounter = useRef<number>(0);
   const [fps, setFps] = useState<number>(0);
-  const { width, height } = useMaxSize(ASPECT_4_3);
+  const resolutions = [
+    { label: "CGA (320×200)", w: 320, h: 200 },
+    { label: "EGA (640×350)", w: 640, h: 350 },
+    { label: "VGA (640×480)", w: 640, h: 480 },
+    { label: "SVGA (800×600)", w: 800, h: 600 },
+    { label: "XGA (1024×768)", w: 1024, h: 768 },
+    { label: "1080p (1920×1080)", w: 1920, h: 1080 },
+    { label: "4K (3840×2160)", w: 3840, h: 2160 },
+  ];
+  const [resolutionIndex, setResolutionIndex] = useState<number>(0);
+  const renderWidth = resolutions[resolutionIndex].w;
+  const renderHeight = resolutions[resolutionIndex].h;
+  const { width, height } = useMaxSize(renderWidth / renderHeight);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -217,17 +229,18 @@ function App() {
     return pos;
   };
 
-  const init = useCallback((context: CanvasRenderingContext2D) => {
-    context.scale(1, 1);
-    context.translate(0.5, 0.5);
-    const width = Math.floor(context.canvas.width);
-    const height = Math.floor(context.canvas.height);
-    const imageData = context.createImageData(width, height);
-    const buffer = imageData.data;
-    const halfHeight = height / 2;
+  const init = useCallback(
+    (context: CanvasRenderingContext2D) => {
+      context.scale(1, 1);
+      context.translate(0.5, 0.5);
+      const imageData = context.createImageData(renderWidth, renderHeight);
+      const buffer = imageData.data;
+      const halfHeight = renderHeight / 2;
 
-    engineDataRef.current.projection = { width, height, halfHeight, imageData, buffer };
-  }, []);
+      engineDataRef.current.projection = { width: renderWidth, height: renderHeight, halfHeight, imageData, buffer };
+    },
+    [renderWidth, renderHeight],
+  );
 
   const frame = useCallback((context: CanvasRenderingContext2D, since: number) => {
     const { pos, angle } = player.current;
@@ -328,7 +341,8 @@ function App() {
     const renderContext = renderCanvas.getContext("2d");
 
     renderContext?.putImageData(projection.imageData, 0, 0);
-    context.drawImage(renderCanvas, 0, 0);
+    context.imageSmoothingEnabled = false;
+    context.drawImage(renderCanvas, 0, 0, context.canvas.width, context.canvas.height);
 
     fpsCounter.current = fpsCounter.current + 1;
   }, []);
@@ -338,6 +352,16 @@ function App() {
       <div className="canvas-container">
         <Canvas animating={true} width={width} height={height} init={init} frame={frame} />
         <div className="fps-counter">{fps} FPS</div>
+      </div>
+      <div className="resolution-controls">
+        <label>Resolution:</label>
+        <select value={resolutionIndex} onChange={(e) => setResolutionIndex(parseInt(e.target.value))}>
+          {resolutions.map((res, i) => (
+            <option key={res.label} value={i}>
+              {res.label}
+            </option>
+          ))}
+        </select>
       </div>
       <div className="buttons">
         <div></div>
