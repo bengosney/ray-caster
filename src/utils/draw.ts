@@ -1,5 +1,5 @@
 import { RGBA, lightenDarkenRGB } from "./colour";
-import { Vec2, degreeToRadians, vec2 } from "./math";
+import { Vec2, cosFromDegree, sinFromDegree, vec2 } from "./math";
 import { Texture, Sprite } from "./texture";
 
 const REFERENCE_HEIGHT = 50;
@@ -89,8 +89,8 @@ export const drawFloor = (
 ) => {
   const halfHeight = projection.halfHeight;
   const start = halfHeight + wallHeight + 1;
-  const directionCos = Math.cos(degreeToRadians(rayAngle));
-  const directionSin = Math.sin(degreeToRadians(rayAngle));
+  const directionCos = cosFromDegree(rayAngle);
+  const directionSin = sinFromDegree(rayAngle);
 
   let y = start;
   const wallAO = 30;
@@ -105,7 +105,7 @@ export const drawFloor = (
 
   for (let y = start; y < projection.height; y++) {
     const distance = projection.height / (2 * y - projection.height);
-    const correctDistance = distance / Math.cos(degreeToRadians(player.angle) - degreeToRadians(rayAngle));
+    const correctDistance = distance / cosFromDegree(player.angle - rayAngle);
 
     const tileX = correctDistance * directionCos + player.pos.x / 2;
     const tileY = correctDistance * directionSin + player.pos.y / 2;

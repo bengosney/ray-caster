@@ -2,7 +2,17 @@ import Canvas from "./widgets/Canvas";
 import "./App.css";
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { rgba, rgb } from "./utils/colour";
-import { Vec2, addVec2, angleDegVec2, degreeToRadians, distVec2, move, vec2, vec2Apply } from "./utils/math";
+import {
+  Vec2,
+  addVec2,
+  angleDegVec2,
+  cosFromDegree,
+  sinFromDegree,
+  distVec2,
+  move,
+  vec2,
+  vec2Apply,
+} from "./utils/math";
 import { Texture, Sprite, loadTexture } from "./utils/texture";
 import { ProjectionData, drawLine, drawTexture, drawFloor, drawSprite } from "./utils/draw";
 
@@ -260,8 +270,8 @@ function App() {
     for (let i = 0; i < projection.width; i++) {
       const rayAngle = initalAngle + angleInc * i;
       const ray = vec2(pos.x, pos.y);
-      const rayCos = Math.cos(degreeToRadians(rayAngle)) / engineData.precision;
-      const raySin = Math.sin(degreeToRadians(rayAngle)) / engineData.precision;
+      const rayCos = cosFromDegree(rayAngle) / engineData.precision;
+      const raySin = sinFromDegree(rayAngle) / engineData.precision;
 
       let tests = 0;
       while (level.data(vec2(Math.floor(ray.x), Math.floor(ray.y))) === 0 && tests < 1250) {
@@ -272,7 +282,7 @@ function App() {
       const wallID = level.data(vec2(Math.floor(ray.x), Math.floor(ray.y)));
 
       const distance = Math.sqrt(Math.pow(pos.x - ray.x, 2) + Math.pow(pos.y - ray.y, 2));
-      const correctDistance = distance * Math.cos(degreeToRadians(rayAngle - angle));
+      const correctDistance = distance * cosFromDegree(rayAngle - angle);
       depthMap[i] = correctDistance;
       const wallHeight = Math.floor(projection.height / correctDistance);
 
@@ -292,7 +302,7 @@ function App() {
       const angleTo = angleDegVec2(pos, entity.position);
       const diff = ((angleTo - wrappedAngle + 540) % 360) - 180;
       const distance = distVec2(entity.position, pos);
-      const correctDistance = distance * Math.cos(degreeToRadians(diff));
+      const correctDistance = distance * cosFromDegree(diff);
       const height = Math.floor(projection.height / correctDistance);
       const x = (halfFOV + diff) * pixelPerDeg;
 

@@ -5,11 +5,39 @@ export interface Vec2 {
 
 export const vec2 = (x: number, y: number): Vec2 => ({ x, y });
 
-export const degreeToRadians = (degree: number): number => (degree * Math.PI) / 180;
+const radiansCache = new Float64Array(3600);
+const cosCache = new Float64Array(3600);
+const sinCache = new Float64Array(3600);
+for (let i = 0; i < 3600; i++) {
+  const radian = (i / 10) * (Math.PI / 180);
+  radiansCache[i] = radian;
+  cosCache[i] = Math.cos(radian);
+  sinCache[i] = Math.sin(radian);
+}
+
+const normaliseIndex = (degree: number): number => {
+  const index = Math.round(degree * 10) % 3600;
+  return index >= 0 ? index : index + 3600;
+};
+
+export const degreeToRadians = (degree: number): number => {
+  const cached = radiansCache[normaliseIndex(degree)];
+  return cached !== undefined ? cached : (degree * Math.PI) / 180;
+};
+
+export const cosFromDegree = (degree: number): number => {
+  const cached = cosCache[normaliseIndex(degree)];
+  return cached !== undefined ? cached : Math.cos(degreeToRadians(degree));
+};
+
+export const sinFromDegree = (degree: number): number => {
+  const cached = sinCache[normaliseIndex(degree)];
+  return cached !== undefined ? cached : Math.sin(degreeToRadians(degree));
+};
 
 export const move = (angle: number, amount: number): Vec2 => ({
-  x: Math.cos(degreeToRadians(angle)) * amount,
-  y: Math.sin(degreeToRadians(angle)) * amount,
+  x: cosFromDegree(angle) * amount,
+  y: sinFromDegree(angle) * amount,
 });
 
 export const vec2Apply = (vec: Vec2, func: (x: number) => number): Vec2 => ({
