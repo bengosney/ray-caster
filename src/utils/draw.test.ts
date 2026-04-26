@@ -61,7 +61,7 @@ const filledPixelCount = (projection: ProjectionData): number => {
 describe("drawPixel", () => {
   it("writes RGBA to buffer at correct offset", () => {
     const projection = makeProjection(10, 10);
-    drawPixel(vec2(3, 2), rgba(255, 128, 64, 255), projection);
+    drawPixel(3, 2, 255, 128, 64, 255, projection);
 
     const offset = 4 * (3 + 2 * 10);
     expect(projection.buffer[offset]).toBe(255);
@@ -73,9 +73,9 @@ describe("drawPixel", () => {
   it("alpha blends with existing pixel", () => {
     const projection = makeProjection(10, 10);
     // Draw opaque white first
-    drawPixel(vec2(0, 0), rgba(255, 255, 255, 255), projection);
+    drawPixel(0, 0, 255, 255, 255, 255, projection);
     // Draw 50% alpha black on top
-    drawPixel(vec2(0, 0), rgba(0, 0, 0, 128), projection);
+    drawPixel(0, 0, 0, 0, 0, 128, projection);
 
     const pixel = getPixel(vec2(0, 0), projection);
     // Should be roughly mid-gray
@@ -85,15 +85,15 @@ describe("drawPixel", () => {
 
   it("skips pixels outside bounds", () => {
     const projection = makeProjection(10, 10);
-    drawPixel(vec2(15, 5), rgba(255, 0, 0, 255), projection);
-    drawPixel(vec2(5, 15), rgba(255, 0, 0, 255), projection);
+    drawPixel(15, 5, 255, 0, 0, 255, projection);
+    drawPixel(5, 15, 255, 0, 0, 255, projection);
 
     expect(filledPixelCount(projection)).toBe(0);
   });
 
   it("floors fractional coordinates", () => {
     const projection = makeProjection(10, 10);
-    drawPixel(vec2(2.7, 3.9), rgba(255, 0, 0, 255), projection);
+    drawPixel(2.7, 3.9, 255, 0, 0, 255, projection);
 
     const pixel = getPixel(vec2(2, 3), projection);
     expect(pixel.r).toBe(255);
@@ -104,7 +104,7 @@ describe("drawPixel", () => {
 describe("getPixel", () => {
   it("reads back what was written", () => {
     const projection = makeProjection(10, 10);
-    drawPixel(vec2(5, 5), rgba(10, 20, 30, 255), projection);
+    drawPixel(5, 5, 10, 20, 30, 255, projection);
 
     const pixel = getPixel(vec2(5, 5), projection);
     expect(pixel).toEqual({ r: 10, g: 20, b: 30, a: 255 });
@@ -120,9 +120,9 @@ describe("getPixel", () => {
 describe("darkenPixel", () => {
   it("reduces RGB values", () => {
     const projection = makeProjection(10, 10);
-    drawPixel(vec2(0, 0), rgba(200, 200, 200, 255), projection);
+    drawPixel(0, 0, 200, 200, 200, 255, projection);
 
-    darkenPixel(vec2(0, 0), 50, projection);
+    darkenPixel(0, 0, 50, projection);
 
     const pixel = getPixel(vec2(0, 0), projection);
     expect(pixel.r).toBe(150);
@@ -132,9 +132,9 @@ describe("darkenPixel", () => {
 
   it("clamps to zero, not negative", () => {
     const projection = makeProjection(10, 10);
-    drawPixel(vec2(0, 0), rgba(30, 30, 30, 255), projection);
+    drawPixel(0, 0, 30, 30, 30, 255, projection);
 
-    darkenPixel(vec2(0, 0), 100, projection);
+    darkenPixel(0, 0, 100, projection);
 
     const pixel = getPixel(vec2(0, 0), projection);
     expect(pixel.r).toBe(0);
