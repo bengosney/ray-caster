@@ -43,7 +43,17 @@ interface Level {
 }
 
 const noise2D = makeNoise2D(0);
-const getLevelData = ({ x, y }: Vec2): number => (noise2D(x, y) > 0.5 ? 1 : 0);
+const levelData = new Map<number, number>();
+const getLevelDataUncached = ({ x, y }: Vec2): number => (noise2D(x, y) > 0.5 ? 1 : 0);
+const getLevelData = ({ x, y }: Vec2): number => {
+  const key = x * 65536 + y;
+  let v = levelData.get(key);
+  if (typeof v === "undefined") {
+    v = getLevelDataUncached({ x, y });
+    levelData.set(key, v);
+  }
+  return v;
+};
 
 const level: Level = {
   data: getLevelData,
