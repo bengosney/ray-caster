@@ -43,7 +43,17 @@ interface Level {
 }
 
 const noise2D = makeNoise2D(0);
-const getLevelData = ({ x, y }: Vec2): number => (noise2D(x, y) > 0.5 ? 1 : 0);
+const levelData = new Map<number, number>();
+const getLevelDataUncached = ({ x, y }: Vec2): number => (noise2D(x, y) > 0.5 ? 1 : 0);
+const getLevelData = ({ x, y }: Vec2): number => {
+  const key = x * 65536 + y;
+  let v = levelData.get(key);
+  if (typeof v === "undefined") {
+    v = getLevelDataUncached({ x, y });
+    levelData.set(key, v);
+  }
+  return v;
+};
 
 const level: Level = {
   data: getLevelData,
@@ -300,42 +310,57 @@ function App() {
 
     const depthMap: number[] = [];
 
-    const getWallID = (ray: Vec2, rayCos: number, raySin: number): number => {
-      const pos: Vec2 = vec2(0, 0);
-      for (let i = 0; i < 1250; i++) {
-        pos.x = Math.floor(ray.x);
-        pos.y = Math.floor(ray.y);
-        const wallID = level.data(pos);
-        if (wallID !== 0) {
-          return wallID;
-        }
+    const castRay = (rayAngle: number): { wallID: number; perpDist: number; wallHit: number } => {
+      const dirX = cosFromDegree(rayAngle);
+      const dirY = sinFromDegree(rayAngle);
 
-        ray.x += rayCos;
-        ray.y += raySin;
+      let mapX = Math.floor(pos.x);
+      let mapY = Math.floor(pos.y);
+
+      const deltaDistX = Math.abs(dirX) < 1e-10 ? 1e10 : Math.abs(1 / dirX);
+      const deltaDistY = Math.abs(dirY) < 1e-10 ? 1e10 : Math.abs(1 / dirY);
+
+      const stepX = dirX < 0 ? -1 : 1;
+      const stepY = dirY < 0 ? -1 : 1;
+
+      let sideDistX = dirX < 0 ? (pos.x - mapX) * deltaDistX : (mapX + 1 - pos.x) * deltaDistX;
+      let sideDistY = dirY < 0 ? (pos.y - mapY) * deltaDistY : (mapY + 1 - pos.y) * deltaDistY;
+
+      let side = 0;
+      let wallID = 0;
+
+      for (let step = 0; step < 200; step++) {
+        if (sideDistX < sideDistY) {
+          sideDistX += deltaDistX;
+          mapX += stepX;
+          side = 0;
+        } else {
+          sideDistY += deltaDistY;
+          mapY += stepY;
+          side = 1;
+        }
+        wallID = level.data({ x: mapX, y: mapY });
+        if (wallID !== 0) break;
       }
-      return 0;
+
+      const perpDist = side === 0 ? sideDistX - deltaDistX : sideDistY - deltaDistY;
+      const wallHit = side === 0 ? pos.y + perpDist * dirY : pos.x + perpDist * dirX;
+
+      return { wallID, perpDist, wallHit };
     };
 
     for (let i = 0; i < projection.width; i++) {
       const rayAngle = initalAngle + angleInc * i;
-      const ray = vec2(pos.x, pos.y);
-      const rayCos = cosFromDegree(rayAngle) / engineData.precision;
-      const raySin = sinFromDegree(rayAngle) / engineData.precision;
+      const { wallID, perpDist, wallHit } = castRay(rayAngle);
 
-      const wallID = getWallID(ray, rayCos, raySin);
-
-      const dx = pos.x - ray.x;
-      const dy = pos.y - ray.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      const correctDistance = distance * cosFromDegree(rayAngle - angle);
-      depthMap[i] = correctDistance;
-      const wallHeight = Math.floor(projection.height / correctDistance);
+      depthMap[i] = perpDist;
+      const wallHeight = Math.floor(projection.height / perpDist);
 
       drawLine(vec2(i, 0), vec2(i, halfHeight - wallHeight), rgba(0, 200, 200, 255), projection);
 
       const texture = level.textures[wallID];
-      const textureX = Math.floor((ray.y + ray.x) * texture.width) % texture.width;
-      drawTexture(i, wallHeight, textureX, texture, distance, projection);
+      const textureX = Math.abs(Math.floor(wallHit * texture.width) % texture.width);
+      drawTexture(i, wallHeight, textureX, texture, perpDist, projection);
 
       drawFloor(i, wallHeight, player.current, rayAngle, level.textures[0], projection);
     }
