@@ -1,4 +1,4 @@
-import { RGBA, lightenDarkenRGB } from "./colour";
+import { RGBA } from "./colour";
 import { Vec2, cosFromDegree, sinFromDegree, vec2 } from "./math";
 import { Texture, Sprite } from "./texture";
 
@@ -12,12 +12,19 @@ export interface ProjectionData {
   buffer: Uint8ClampedArray;
 }
 
-export const drawPixel = ({ x, y }: Vec2, color: RGBA, projection: ProjectionData) => {
+export const drawPixel = (
+  x: number,
+  y: number,
+  r: number,
+  g: number,
+  b: number,
+  a: number,
+  projection: ProjectionData,
+) => {
   if (x < 0 || y < 0 || x >= projection.width || y >= projection.height) {
     return;
   }
   const offset = 4 * (Math.floor(x) + Math.floor(y) * projection.width);
-  const { r, g, b, a } = color;
   if (a === 255) {
     projection.buffer[offset] = r;
     projection.buffer[offset + 1] = g;
@@ -41,23 +48,32 @@ export const getPixel = ({ x, y }: Vec2, projection: ProjectionData): RGBA => {
   };
 };
 
-export const darkenPixel = (pos: Vec2, darken: number, projection: ProjectionData): void => {
-  const pixel = getPixel(pos, projection);
-  drawPixel(pos, lightenDarkenRGB(pixel, -darken), projection);
+export const darkenPixel = (x: number, y: number, darken: number, projection: ProjectionData): void => {
+  const offset = 4 * (Math.floor(x) + Math.floor(y) * projection.width);
+  drawPixel(
+    x,
+    y,
+    Math.max(0, projection.buffer[offset] - darken),
+    Math.max(0, projection.buffer[offset + 1] - darken),
+    Math.max(0, projection.buffer[offset + 2] - darken),
+    255,
+    projection,
+  );
 };
 
 export const drawLine = (p1: Vec2, p2: Vec2, colour: RGBA, projection: ProjectionData) => {
   const clampY = (y: number) => Math.min(projection.height, Math.max(0, y));
+  const { r, g, b, a } = colour;
   for (let y = clampY(p1.y); y < clampY(p2.y); y++) {
-    const { x } = p1;
-    drawPixel({ x, y }, colour, projection);
+    drawPixel(p1.x, y, r, g, b, a, projection);
   }
 };
 
 export const drawBox = (topLeft: Vec2, width: number, height: number, colour: RGBA, projection: ProjectionData) => {
+  const { r, g, b, a } = colour;
   for (let y = Math.max(0, topLeft.y); y < topLeft.y + height; y++) {
     for (let x = Math.max(0, topLeft.x); x < topLeft.x + width; x++) {
-      drawPixel({ x, y }, colour, projection);
+      drawPixel(x, y, r, g, b, a, projection);
     }
   }
 };
@@ -74,10 +90,17 @@ export const drawTexture = (
   let y: number = projection.halfHeight - wallHeight;
   const absPosition = Math.abs(texturePositionX);
 
+  const clampY = (v: number) => Math.min(projection.height, Math.max(0, v));
   for (let i = 0; i < texture.height; i++) {
     const baseColour = texture.colors[texture.bitmap[i][absPosition]];
-    const distColour = lightenDarkenRGB(baseColour, -(distance * 10));
-    drawLine({ x, y }, { x, y: Math.floor(y + (yIncrement + 0.5)) }, distColour, projection);
+    const amt = -(distance * 10);
+    const r = Math.max(0, Math.min(255, baseColour.r + amt));
+    const g = Math.max(0, Math.min(255, baseColour.g + amt));
+    const b = Math.max(0, Math.min(255, baseColour.b + amt));
+    const yEnd = Math.floor(y + (yIncrement + 0.5));
+    for (let py = clampY(y); py < clampY(yEnd); py++) {
+      drawPixel(x, py, r, g, b, 255, projection);
+    }
     if (y > projection.height) {
       break;
     }
@@ -103,7 +126,7 @@ export const drawFloor = (
   const wallAOFactor = wallAO / (wallHeight * 0.025);
   for (let ao = wallAO; ao > 0; ao -= wallAOFactor) {
     y -= 1;
-    darkenPixel({ x, y }, ao, projection);
+    darkenPixel(x, y, ao, projection);
   }
 
   const aoFactor = 1.9;
@@ -120,8 +143,16 @@ export const drawFloor = (
     const textureY = Math.abs(Math.floor(tileY * floorTexture.height) % floorTexture.height);
 
     const baseColour = floorTexture.colors[floorTexture.bitmap[textureX][textureY]];
-    const distColour = lightenDarkenRGB(baseColour, -(distance * 15 + ao));
-    drawPixel({ x, y }, distColour, projection);
+    const amt = -(distance * 15 + ao);
+    drawPixel(
+      x,
+      y,
+      Math.max(0, Math.min(255, baseColour.r + amt)),
+      Math.max(0, Math.min(255, baseColour.g + amt)),
+      Math.max(0, Math.min(255, baseColour.b + amt)),
+      255,
+      projection,
+    );
     ao = Math.max(ao - aoFactor, 0);
   }
 };
