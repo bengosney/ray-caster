@@ -352,15 +352,16 @@ function App() {
     for (let i = 0; i < projection.width; i++) {
       const rayAngle = initalAngle + angleInc * i;
       const { wallID, perpDist, wallHit } = castRay(rayAngle);
+      const correctDistance = perpDist * cosFromDegree(rayAngle - angle);
 
-      depthMap[i] = perpDist;
-      const wallHeight = Math.floor(projection.height / perpDist);
+      depthMap[i] = correctDistance;
+      const wallHeight = Math.floor(projection.height / correctDistance);
 
       drawLine(vec2(i, 0), vec2(i, halfHeight - wallHeight), rgba(0, 200, 200, 255), projection);
 
       const texture = level.textures[wallID];
       const textureX = Math.abs(Math.floor(wallHit * texture.width) % texture.width);
-      drawTexture(i, wallHeight, textureX, texture, perpDist, projection);
+      drawTexture(i, wallHeight, textureX, texture, correctDistance, projection);
 
       drawFloor(i, wallHeight, player.current, rayAngle, level.textures[0], projection);
     }
